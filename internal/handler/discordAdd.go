@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"log/slog"
+	"maps"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -43,7 +44,7 @@ func (h *DiscordHandler) Add(c *gin.Context) {
 			slog.Error("Invalid channel name format", "channelName", name)
 			invalidChannelNames = append(invalidChannelNames, name)
 		}
-		if !vaildWebhookURL.MatchString(webhook) {
+		if !vaildDiscordWebhook.MatchString(webhook) {
 			slog.Error("Invalid webhook URL format", "webhook", webhook)
 			invalodWebhookURLs = append(invalodWebhookURLs, webhook)
 		}
@@ -71,20 +72,20 @@ func (h *DiscordHandler) Add(c *gin.Context) {
 		path = abs
 	}
 
-	channelsMu.Lock()
-	if channels == nil {
+	discordChannelsMu.Lock()
+	if discordChannels == nil {
 		if data, err := os.ReadFile(path); err == nil {
 			var m map[string]string
 			if err := json.Unmarshal(data, &m); err == nil {
-				channels = m
+				discordChannels = m
 			} else {
-				channels = make(map[string]string)
+				discordChannels = make(map[string]string)
 			}
 		} else {
 			if os.IsNotExist(err) {
-				channels = make(map[string]string)
+				discordChannels = make(map[string]string)
 			} else {
-				channelsMu.Unlock()
+				discordChannelsMu.Unlock()
 				slog.Error("Failed to read discord_channel.json", "path", path, "error", err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load channel configuration"})
 				return
@@ -96,16 +97,14 @@ func (h *DiscordHandler) Add(c *gin.Context) {
 		name := strings.TrimSpace(data.Name)
 		webhook := strings.TrimSpace(data.Webhook)
 
-		channels[name] = webhook
+		discordChannels[name] = webhook
 	}
 
-	toWrite := make(map[string]string, len(channels))
-	for k, v := range channels {
-		toWrite[k] = v
-	}
-	channelsMu.Unlock()
+	newContent := make(map[string]string, len(discordChannels))
+	maps.Copy(newContent, discordChannels)
+	discordChannelsMu.Unlock()
 
-	if err := utils.WriteJSON(path, toWrite); err != nil {
+	if err := utils.WriteJSON(path, newContent); err != nil {
 		slog.Error("Failed to write discord_channel.json", "path", path, "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save channel configuration"})
 		return

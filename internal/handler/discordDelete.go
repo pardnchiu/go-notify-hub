@@ -3,9 +3,8 @@ package handler
 import (
 	"goNotify/internal/utils"
 	"log/slog"
+	"maps"
 	"net/http"
-	"os"
-	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,33 +23,25 @@ func (h *DiscordHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	channelsMu.Lock()
-	defer channelsMu.Unlock()
+	discordChannelsMu.Lock()
+	defer discordChannelsMu.Unlock()
 
-	if channels == nil {
+	if discordChannels == nil {
 		c.JSON(http.StatusOK, gin.H{"message": "ok"})
 		return
 	}
 
-	delete(channels, channelName)
-	toWrite := make(map[string]string, len(channels))
-	for k, v := range channels {
-		toWrite[k] = v
-	}
+	delete(discordChannels, channelName)
+	newContent := make(map[string]string, len(discordChannels))
+	maps.Copy(newContent, discordChannels)
 
-	wd, err := os.Getwd()
+	path, err := utils.GetPath("json", "discord_channel.json")
 	if err != nil {
-		slog.Error("Failed to get working directory", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to determine file path"})
 		return
 	}
-	path := filepath.Join(wd, "json", "discord_channel.json")
-	path = filepath.ToSlash(path)
-	if abs, err := filepath.Abs(path); err == nil {
-		path = abs
-	}
 
-	if err := utils.WriteJSON(path, toWrite); err != nil {
+	if err := utils.WriteJSON(path, newContent); err != nil {
 		slog.Error("Failed to write discord_channel.json", "path", path, "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save channel configuration"})
 		return

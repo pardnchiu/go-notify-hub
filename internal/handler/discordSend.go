@@ -25,9 +25,9 @@ func (h *DiscordHandler) Send(c *gin.Context) {
 		return
 	}
 
-	channelsMu.RLock()
-	cacheChannels := channels
-	channelsMu.RUnlock()
+	discordChannelsMu.RLock()
+	cacheChannels := discordChannels
+	discordChannelsMu.RUnlock()
 
 	if cacheChannels == nil {
 		wd, err := os.Getwd()
@@ -43,24 +43,24 @@ func (h *DiscordHandler) Send(c *gin.Context) {
 			path = abs
 		}
 
-		channelsMu.Lock()
+		discordChannelsMu.Lock()
 		data, err := os.ReadFile(path)
 		if err != nil {
 			slog.Error("Failed to read discord_channel.json", "path", path, "error", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "channel configuration not found"})
-			channelsMu.Unlock()
+			discordChannelsMu.Unlock()
 			return
 		}
 		var tempChannels map[string]string
 		if err := json.Unmarshal(data, &tempChannels); err != nil {
 			slog.Error("Failed to parse discord_channel.json", "error", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid channel configuration"})
-			channelsMu.Unlock()
+			discordChannelsMu.Unlock()
 			return
 		}
-		channels = tempChannels
-		cacheChannels = channels
-		channelsMu.Unlock()
+		discordChannels = tempChannels
+		cacheChannels = discordChannels
+		discordChannelsMu.Unlock()
 	}
 
 	webhook, ok := cacheChannels[channelName]
