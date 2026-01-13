@@ -4,14 +4,16 @@ import (
 	"goNotify/internal/utils"
 	"log/slog"
 	"os"
+	"regexp"
 	"sync"
 
 	"github.com/gin-gonic/gin"
 )
 
 var (
-	slackChannels   map[string]string
-	slackChannelsMu sync.RWMutex
+	slackChannels     map[string]string
+	slackChannelsMu   sync.RWMutex
+	validSlackWebhook = regexp.MustCompile(`^https://hooks\.slack\.com/services/[A-Z0-9]{8,}/[A-Z0-9]{8,}/[a-zA-Z0-9]{24,}$`)
 )
 
 type SlackHandler struct{}

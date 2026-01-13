@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// POST: /discord/send/:channelName
-func (h *DiscordHandler) Send(c *gin.Context) {
+// POST: /slack/send/:channelName
+func (h *SlackHandler) Send(c *gin.Context) {
 	channelName := c.Param("channelName")
 	if channelName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "channel name is required"})
@@ -22,9 +22,9 @@ func (h *DiscordHandler) Send(c *gin.Context) {
 		return
 	}
 
-	discordChannelsMu.RLock()
-	cacheChannels := discordChannels
-	discordChannelsMu.RUnlock()
+	slackChannelsMu.RLock()
+	cacheChannels := slackChannels
+	slackChannelsMu.RUnlock()
 	if cacheChannels == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "please insert this channel first"})
 		return
@@ -36,8 +36,7 @@ func (h *DiscordHandler) Send(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "this channel does not exist"})
 		return
 	}
-
-	var req channel.DiscordRequest
+	var req channel.SlackRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		slog.Error("Failed to bind JSON", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request payload"})
@@ -45,17 +44,12 @@ func (h *DiscordHandler) Send(c *gin.Context) {
 	}
 	req.WebhookURL = webhook
 
-	if req.Title == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "title is required"})
+	if req.Text == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "text is required"})
 		return
 	}
 
-	if req.Description == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "description is required"})
-		return
-	}
-
-	if err := channel.SendToDiscord(req); err != nil {
+	if err := channel.SendToSlack(req); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

@@ -1,53 +1,59 @@
 # Update Log
 
-> Generated: 2026-01-13 22:50
-> v0.5.0
+> Generated: 2026-01-14 00:53
+> v0.5.0 → v0.6.0
 
 ## Recommended Commit Message
 
-feat: 新增 Slack webhook 支援並重構共用工具函式
+feat: 完善 Slack webhook API 端點並優化 Discord handler
 
-feat: add Slack webhook support and refactor shared utilities
-
-***
-
-## Summary
-
-新增 Slack webhook 整合功能，實作 Slack 訊息發送與頻道管理。重構檔案讀取與路徑處理相關的共用工具函式，從 Discord handler 中提取到 `utils` 套件，統一 Discord 和 Slack handler 的命名規範與全域變數管理方式。
-
-## Changes
-
-### FEAT
-- 新增 Slack webhook 整合功能，包含 `internal/channel/slack.go` 與 `internal/handler/slack.go`
-- 實作 Slack 訊息發送支援，包含豐富的訊息格式（attachment、fields、footer、圖片等）
-- 實作 Slack 頻道列表查詢 API（`GET /slack/list`）
-
-### REFACTOR
-- 重構 Discord 全域變數命名，從 `channels` 改為 `discordChannels`，`channelsMu` 改為 `discordChannelsMu`
-- 重構 Discord webhook 驗證正則表達式，從 `vaildWebhookURL` 改為 `vaildDiscordWebhook`
-- 在 `utils` 套件中提取共用函式 `GetPath()` 和 `GetFile()`，用於統一檔案路徑處理與 JSON 讀取邏輯
-- 使用 `maps.Copy()` 取代手動迴圈複製 map 的操作
-- 簡化 Discord handler 初始化邏輯，使用新的 `utils.GetFile()` 函式
+feat: complete Slack webhook API endpoints and optimize Discord handlers
 
 ***
 
 ## Summary
 
-Add Slack webhook integration with message sending and channel management capabilities. Refactor file reading and path handling utilities by extracting them from Discord handler into the `utils` package. Unify naming conventions and global variable management across Discord and Slack handlers.
+新增 Slack webhook 的發送、註冊與刪除 API 端點，完整實作 Slack 頻道管理功能。優化 Discord handler 的檔案讀取邏輯，統一使用 `utils.GetPath()` 工具函式，並改善錯誤處理機制。
 
 ## Changes
 
 ### FEAT
-- Add Slack webhook integration with `internal/channel/slack.go` and `internal/handler/slack.go`
-- Implement Slack message sending with rich formatting support (attachments, fields, footer, images)
-- Implement Slack channel list API endpoint (`GET /slack/list`)
+- 新增 Slack 訊息發送 API 端點（`POST /slack/:channelName`）
+- 新增 Slack 頻道註冊 API 端點（`POST /slack/add`）
+- 新增 Slack 頻道刪除 API 端點（`DELETE /slack/:channelName`）
+- 實作 `slackAdd.go`、`slackDelete.go`、`slackSend.go` handler 功能
 
 ### REFACTOR
-- Refactor Discord global variable naming from `channels` to `discordChannels`, `channelsMu` to `discordChannelsMu`
-- Refactor Discord webhook validation regex from `vaildWebhookURL` to `vaildDiscordWebhook`
-- Extract shared utilities `GetPath()` and `GetFile()` into `utils` package for unified file path handling and JSON reading
-- Replace manual map copying loops with `maps.Copy()`
-- Simplify Discord handler initialization by using new `utils.GetFile()` function
+- 優化 `discordAdd.go` 檔案路徑處理，改用 `utils.GetPath()` 統一管理
+- 優化 `discordSend.go` 移除重複的檔案讀取邏輯，改為提前返回錯誤
+- 改善 Discord handler 的 defer 使用時機與錯誤處理流程
+- 簡化 map 複製與檔案寫入邏輯
+
+### UPDATE
+- 在 `slack.go` 中新增 `validSlackWebhook` 正則表達式，用於驗證 Slack webhook URL 格式
+
+***
+
+## Summary
+
+Add Slack webhook Send, Add, and Delete API endpoints to complete Slack channel management features. Optimize Discord handler file reading logic by using unified `utils.GetPath()` utility function and improve error handling mechanisms.
+
+## Changes
+
+### FEAT
+- Add Slack message sending API endpoint (`POST /slack/:channelName`)
+- Add Slack channel registration API endpoint (`POST /slack/add`)
+- Add Slack channel deletion API endpoint (`DELETE /slack/:channelName`)
+- Implement `slackAdd.go`, `slackDelete.go`, `slackSend.go` handler functions
+
+### REFACTOR
+- Optimize `discordAdd.go` file path handling using unified `utils.GetPath()`
+- Optimize `discordSend.go` by removing duplicate file reading logic and returning errors early
+- Improve defer placement and error handling flow in Discord handlers
+- Simplify map copying and file writing logic
+
+### UPDATE
+- Add `validSlackWebhook` regex pattern in `slack.go` for Slack webhook URL validation
 
 ***
 
@@ -56,13 +62,12 @@ Add Slack webhook integration with message sending and channel management capabi
 | File | Status | Tag |
 |------|--------|-----|
 | `cmd/api/main.go` | Modified | FEAT |
-| `internal/handler/discord.go` | Modified | REFACTOR |
 | `internal/handler/discordAdd.go` | Modified | REFACTOR |
-| `internal/handler/discordDelete.go` | Modified | REFACTOR |
 | `internal/handler/discordSend.go` | Modified | REFACTOR |
-| `internal/utils/utils.go` | Modified | REFACTOR |
-| `internal/channel/slack.go` | Added | FEAT |
-| `internal/handler/slack.go` | Added | FEAT |
+| `internal/handler/slack.go` | Modified | UPDATE |
+| `internal/handler/slackAdd.go` | Added | FEAT |
+| `internal/handler/slackDelete.go` | Added | FEAT |
+| `internal/handler/slackSend.go` | Added | FEAT |
 
 ***
 

@@ -11,9 +11,9 @@ import (
 	"goNotify/internal/utils"
 )
 
-// POST: /discord/add
+// POST: /slack/add
 // BODY: { datas: [{ "name": "name", "webhook": "url"}] }
-func (h *DiscordHandler) Add(c *gin.Context) {
+func (h *SlackHandler) Add(c *gin.Context) {
 	var req struct {
 		Datas []struct {
 			Name    string `json:"name"`
@@ -41,7 +41,7 @@ func (h *DiscordHandler) Add(c *gin.Context) {
 			slog.Error("Invalid channel name format", "channelName", name)
 			invalidChannelNames = append(invalidChannelNames, name)
 		}
-		if !vaildDiscordWebhook.MatchString(webhook) {
+		if !validSlackWebhook.MatchString(webhook) {
 			slog.Error("Invalid webhook URL format", "webhook", webhook)
 			invalodWebhookURLs = append(invalodWebhookURLs, webhook)
 		}
@@ -56,10 +56,10 @@ func (h *DiscordHandler) Add(c *gin.Context) {
 		return
 	}
 
-	discordChannelsMu.Lock()
-	defer discordChannelsMu.Unlock()
+	slackChannelsMu.Lock()
+	defer slackChannelsMu.Unlock()
 
-	if discordChannels == nil {
+	if slackChannels == nil {
 		c.JSON(http.StatusOK, gin.H{"message": "ok"})
 		return
 	}
@@ -68,20 +68,20 @@ func (h *DiscordHandler) Add(c *gin.Context) {
 		name := strings.TrimSpace(data.Name)
 		webhook := strings.TrimSpace(data.Webhook)
 
-		discordChannels[name] = webhook
+		slackChannels[name] = webhook
 	}
 
-	newContent := make(map[string]string, len(discordChannels))
-	maps.Copy(newContent, discordChannels)
+	newContent := make(map[string]string, len(slackChannels))
+	maps.Copy(newContent, slackChannels)
 
-	path, err := utils.GetPath("json", "discord_channel.json")
+	path, err := utils.GetPath("json", "slack_channel.json")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to determine file path"})
 		return
 	}
 
 	if err := utils.WriteJSON(path, newContent); err != nil {
-		slog.Error("Failed to write discord_channel.json", "path", path, "error", err)
+		slog.Error("Failed to write slack_channel.json", "path", path, "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save channel configuration"})
 		return
 	}

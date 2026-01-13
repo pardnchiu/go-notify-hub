@@ -26,6 +26,9 @@ func main() {
 	r.DELETE("/discord/:channelName", discordHandler.Delete)
 
 	r.GET("/slack/list", slackHandler.List)
+	r.POST("/slack/:channelName", slackHandler.Send)
+	r.POST("/slack/add", slackHandler.Add)
+	r.DELETE("/slack/:channelName", slackHandler.Delete)
 
 	log.Println("start on :8080")
 	if err := r.Run(":8080"); err != nil {
