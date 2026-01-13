@@ -14,6 +14,7 @@ func main() {
 
 	r.POST("/discord/:channelName", discordHandler.Send)
 	r.POST("/discord/add", discordHandler.Add)
+	r.DELETE("/discord/:channelName", discordHandler.Delete)
 
 	log.Println("start on :8080")
 	if err := r.Run(":8080"); err != nil {
