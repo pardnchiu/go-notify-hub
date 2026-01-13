@@ -1,0 +1,12 @@
+services:
+  app:
+    image: docker.io/library/golang:1.25.1-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: go run /app/cmd/api/main.go
+    environment:
+      - LINEBOT_SECRET=${LINEBOT_SECRET}
+      - LINEBOT_TOKEN=${LINEBOT_TOKEN}
+    ports:
+      - "8082:8080"

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"goNotify/internal/database"
 	"goNotify/internal/handler"
 	"log"
 
@@ -8,6 +9,12 @@ import (
 )
 
 func main() {
+	db, err := database.NewDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
 	r := gin.Default()
 
 	discordHandler, err := handler.NewDiscordHandler()
@@ -20,6 +27,11 @@ func main() {
 		log.Fatal("Failed to create Slack handler:", err)
 	}
 
+	linebotHandler, err := handler.NewLineHandler()
+	if err != nil {
+		log.Fatal("Failed to create linebot handler:", err)
+	}
+
 	r.GET("/discord/list", discordHandler.List)
 	r.POST("/discord/:channelName", discordHandler.Send)
 	r.POST("/discord/add", discordHandler.Add)
@@ -29,6 +41,13 @@ func main() {
 	r.POST("/slack/:channelName", slackHandler.Send)
 	r.POST("/slack/add", slackHandler.Add)
 	r.DELETE("/slack/:channelName", slackHandler.Delete)
+
+	r.POST("/linebot/webhook", linebotHandler.Webhook)
+	r.POST("/linebot/send/all", linebotHandler.LinebotSend)
+
+	r.NoRoute(func(c *gin.Context) {
+		select {}
+	})
 
 	log.Println("start on :8080")
 	if err := r.Run(":8080"); err != nil {

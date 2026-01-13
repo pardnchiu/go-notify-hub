@@ -2,7 +2,11 @@ module goNotify
 
 go 1.25.1
 
-require github.com/gin-gonic/gin v1.11.0
+require (
+	github.com/gin-gonic/gin v1.11.0
+	github.com/lib/pq v1.10.9
+	github.com/line/line-bot-sdk-go/v8 v8.18.0
+)
 
 require (
 	github.com/bytedance/sonic v1.14.0 // indirect

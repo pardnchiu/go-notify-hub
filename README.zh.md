@@ -3,75 +3,50 @@
 > [!NOTE]
 > 此 README 由 Claude Code 生成，英文版請參閱 [這裡](./README.md)。
 
-[![Go Reference](https://pkg.go.dev/badge/goNotify.svg)](https://pkg.go.dev/goNotify)
-[![license](https://img.shields.io/github/license/pardnchiu/bot)](LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/pardnchiu/bot)](https://goreportcard.com/report/github.com/pardnchiu/bot)
+[![pkg](https://pkg.go.dev/badge/github.com/pardnchiu/goNotify.svg)](https://pkg.go.dev/github.com/pardnchiu/goNotify)
+[![card](https://goreportcard.com/badge/github.com/pardnchiu/goNotify)](https://goreportcard.com/report/github.com/pardnchiu/goNotify)
+[![license](https://img.shields.io/github/license/pardnchiu/goNotify)](LICENSE)
+[![version](https://img.shields.io/github/v/tag/pardnchiu/goNotify?label=release)](https://github.com/pardnchiu/goNotify/releases)
 
-> 一個輕量級的 Go 通知 API 服務，提供 Discord Webhook 整合，支援動態頻道註冊、訊息發送及頻道管理功能。
+> 輕量級 Webhook 通知 API 服務，支援 Discord 和 Slack 多頻道管理與訊息推送。
 
 ## 功能特點
 
-- **RESTful API 設計**：提供簡潔的 HTTP API 介面，易於整合至任何應用程式
-- **Discord Webhook 整合**：支援完整的 Discord Embed 訊息格式，包含圖片、欄位、頁尾等元素
-- **動態頻道管理**：透過 API 即時新增或刪除 Discord 頻道配置，無需重啟服務
-- **JSON 配置存儲**：使用檔案系統持久化頻道配置，資料管理簡單直觀
-- **並發安全設計**：使用 RWMutex 保護共享資源，確保多執行緒環境下的資料一致性
-- **輸入驗證機制**：包含頻道名稱與 Webhook URL 格式驗證，提升系統安全性
-
-## 架構流程
-
-```mermaid
-graph TB
-    A[客戶端應用] -->|POST /discord/add| B[DiscordHandler]
-    A -->|POST /discord/:channelName| B
-    A -->|DELETE /discord/:channelName| B
-    B -->|讀取/寫入| C[discord_channel.json]
-    B -->|發送訊息| D[Discord Webhook API]
-    
-    subgraph "API 端點"
-    B
-    end
-    
-    subgraph "配置存儲"
-    C
-    end
-    
-    subgraph "外部服務"
-    D
-    end
-```
+- **多平台支援**：整合 Discord 和 Slack webhook API
+- **動態頻道管理**：支援執行期間新增、刪除、查詢頻道配置
+- **豐富訊息格式**：支援 Embeds、附件、欄位、圖片、Footer 等進階格式
+- **RESTful API**：簡潔的 HTTP 端點設計，易於整合
+- **持久化配置**：自動將頻道配置儲存為 JSON 檔案
+- **併發安全**：使用 RWMutex 保護共享資料結構
 
 ## 安裝
 
 ### 前置需求
 
-- Go 1.25.1 或更新版本
-- 有效的 Discord Webhook URL
+- Go 1.25.1 或更高版本
+- Git
 
-### 下載與編譯
+### 下載與安裝
 
 ```bash
-# 複製專案
-git clone https://github.com/pardnchiu/bot.git
-cd bot
+# 克隆專案
+git clone https://github.com/pardnchiu/goNotify.git
+cd goNotify
 
-# 安裝依賴
+# 下載依賴
 go mod download
 
-# 編譯專案
-go build -o goNotify ./cmd/api
-
-# 執行服務
-./goNotify
+# 編譯執行
+go run cmd/api/main.go
 ```
 
-服務將在 `http://localhost:8080` 啟動。
+服務將在 `:8080` 埠啟動。
 
 ## 使用方法
 
-### 1. 新增 Discord 頻道
+### Discord 操作
 
-在發送通知前，需先註冊 Discord Webhook URL：
+#### 1. 新增 Discord 頻道
 
 ```bash
 curl -X POST http://localhost:8080/discord/add \
@@ -80,336 +55,294 @@ curl -X POST http://localhost:8080/discord/add \
     "datas": [
       {
         "name": "alerts",
-        "webhook": "https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz"
-      },
-      {
-        "name": "logs",
-        "webhook": "https://discord.com/api/webhooks/0987654321/zyxwvutsrqponmlkjihgfedcba"
+        "webhook": "https://discord.com/api/webhooks/123456789/abcdefg"
       }
     ]
   }'
 ```
 
-**回應：**
-```json
-{
-  "message": "channels added successfully"
-}
-```
-
-### 2. 發送基本通知
+#### 2. 發送 Discord 訊息
 
 ```bash
 curl -X POST http://localhost:8080/discord/alerts \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "系統警報",
-    "description": "伺服器 CPU 使用率超過 90%"
-  }'
-```
-
-### 3. 發送進階通知（包含完整 Embed 元素）
-
-```bash
-curl -X POST http://localhost:8080/discord/alerts \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "部署成功",
-    "description": "應用程式版本 v2.1.0 已成功部署至生產環境",
-    "url": "https://example.com/deployment/12345",
-    "color": "#00ff00",
-    "timestamp": "2026-01-13T21:00:00Z",
-    "thumbnail": "https://example.com/logo.png",
+    "title": "系統告警",
+    "description": "伺服器 CPU 使用率過高",
+    "color": "#FF5733",
     "fields": [
       {
-        "name": "環境",
-        "value": "Production",
+        "name": "伺服器",
+        "value": "web-01",
         "inline": true
       },
       {
-        "name": "版本",
-        "value": "v2.1.0",
+        "name": "CPU 使用率",
+        "value": "95%",
         "inline": true
-      },
-      {
-        "name": "部署時間",
-        "value": "3 分 25 秒",
-        "inline": false
       }
     ],
     "footer": {
-      "text": "CI/CD Pipeline",
-      "icon_url": "https://example.com/ci-icon.png"
-    },
-    "author": {
-      "name": "DevOps Bot",
-      "url": "https://example.com/devops",
-      "icon_url": "https://example.com/bot-avatar.png"
-    },
-    "username": "部署通知機器人",
-    "avatar_url": "https://example.com/deploy-avatar.png"
+      "text": "監控系統",
+      "icon_url": "https://example.com/icon.png"
+    }
   }'
 ```
 
-### 4. 刪除 Discord 頻道
+#### 3. 查詢 Discord 頻道列表
+
+```bash
+curl http://localhost:8080/discord/list
+```
+
+回應範例：
+```json
+{
+  "alerts": "https://discord.com/api/webhooks/123456789/abcdefg",
+  "notifications": "https://discord.com/api/webhooks/987654321/hijklmn"
+}
+```
+
+#### 4. 刪除 Discord 頻道
 
 ```bash
 curl -X DELETE http://localhost:8080/discord/alerts
 ```
 
-**回應：**
-```json
-{
-  "message": "channel deleted successfully"
-}
-```
+### Slack 操作
 
-## API 規格
-
-### POST `/discord/add`
-
-新增一個或多個 Discord 頻道配置。
-
-**請求體：**
-```json
-{
-  "datas": [
-    {
-      "name": "string",      // 頻道名稱（僅允許 0-9、A-Z、a-z、@、_、-）
-      "webhook": "string"    // Discord Webhook URL
-    }
-  ]
-}
-```
-
-**回應碼：**
-- `200 OK`：頻道新增成功
-- `400 Bad Request`：無效的頻道名稱或 Webhook URL 格式
-- `500 Internal Server Error`：伺服器錯誤
-
-### POST `/discord/:channelName`
-
-發送通知至指定的 Discord 頻道。
-
-**路徑參數：**
-- `channelName`：已註冊的頻道名稱
-
-**請求體：**
-```json
-{
-  "title": "string",              // 必填：標題
-  "description": "string",        // 必填：內容描述
-  "url": "string",                // 選填：標題連結
-  "color": "#RRGGBB",             // 選填：顏色（Hex 格式）
-  "timestamp": "ISO8601",         // 選填：時間戳記
-  "image": "string",              // 選填：大圖 URL
-  "thumbnail": "string",          // 選填：縮圖 URL
-  "fields": [                     // 選填：自定義欄位
-    {
-      "name": "string",
-      "value": "string",
-      "inline": boolean
-    }
-  ],
-  "footer": {                     // 選填：頁尾
-    "text": "string",
-    "icon_url": "string"
-  },
-  "author": {                     // 選填：作者資訊
-    "name": "string",
-    "url": "string",
-    "icon_url": "string"
-  },
-  "username": "string",           // 選填：覆蓋機器人顯示名稱
-  "avatar_url": "string"          // 選填：覆蓋機器人頭像
-}
-```
-
-**回應碼：**
-- `200 OK`：通知發送成功
-- `400 Bad Request`：缺少必填欄位或頻道不存在
-- `500 Internal Server Error`：Discord API 錯誤
-
-### DELETE `/discord/:channelName`
-
-刪除指定的 Discord 頻道配置。
-
-**路徑參數：**
-- `channelName`：要刪除的頻道名稱
-
-**回應碼：**
-- `200 OK`：頻道刪除成功
-- `400 Bad Request`：無效的頻道名稱格式
-- `500 Internal Server Error`：伺服器錯誤
-
-## 應用場景
-
-### 監控告警通知
-
-整合至監控系統（如 Prometheus、Grafana），當指標超過閾值時自動發送告警至 Discord 頻道。
-
-```go
-package main
-
-import (
-    "bytes"
-    "encoding/json"
-    "net/http"
-)
-
-func sendAlert(metric string, value float64) error {
-    payload := map[string]interface{}{
-        "title":       "監控告警",
-        "description": fmt.Sprintf("%s 當前值: %.2f", metric, value),
-        "color":       "#ff0000",
-        "fields": []map[string]interface{}{
-            {
-                "name":   "嚴重程度",
-                "value":  "高",
-                "inline": true,
-            },
-        },
-    }
-    
-    data, _ := json.Marshal(payload)
-    resp, err := http.Post(
-        "http://localhost:8080/discord/alerts",
-        "application/json",
-        bytes.NewBuffer(data),
-    )
-    if err != nil {
-        return err
-    }
-    defer resp.Body.Close()
-    return nil
-}
-```
-
-### CI/CD 流程通知
-
-在持續整合/部署流程中發送建置與部署狀態通知。
+#### 1. 新增 Slack 頻道
 
 ```bash
-#!/bin/bash
-# 部署腳本範例
-
-if ./deploy.sh; then
-  curl -X POST http://localhost:8080/discord/deployments \
-    -H "Content-Type: application/json" \
-    -d "{
-      \"title\": \"✅ 部署成功\",
-      \"description\": \"版本 ${VERSION} 已部署至生產環境\",
-      \"color\": \"#00ff00\"
-    }"
-else
-  curl -X POST http://localhost:8080/discord/deployments \
-    -H "Content-Type: application/json" \
-    -d "{
-      \"title\": \"❌ 部署失敗\",
-      \"description\": \"版本 ${VERSION} 部署失敗，請檢查日誌\",
-      \"color\": \"#ff0000\"
-    }"
-fi
+curl -X POST http://localhost:8080/slack/add \
+  -H "Content-Type: application/json" \
+  -d '{
+    "datas": [
+      {
+        "name": "deployments",
+        "webhook": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX"
+      }
+    ]
+  }'
 ```
 
-### 應用程式日誌聚合
+#### 2. 發送 Slack 訊息
 
-將應用程式重要事件即時推送至 Discord 進行團隊協作。
-
-```go
-package logger
-
-import (
-    "bytes"
-    "encoding/json"
-    "net/http"
-)
-
-type DiscordLogger struct {
-    channelName string
-    apiURL      string
-}
-
-func (l *DiscordLogger) Error(message string, err error) {
-    payload := map[string]interface{}{
-        "title":       "應用程式錯誤",
-        "description": message,
-        "color":       "#ff0000",
-        "fields": []map[string]interface{}{
-            {
-                "name":  "錯誤訊息",
-                "value": err.Error(),
-            },
-        },
+```bash
+curl -X POST http://localhost:8080/slack/deployments \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "部署完成通知",
+    "title": "Production 部署",
+    "description": "版本 v1.2.3 已成功部署至生產環境",
+    "color": "good",
+    "fields": [
+      {
+        "title": "環境",
+        "value": "Production",
+        "short": true
+      },
+      {
+        "title": "版本",
+        "value": "v1.2.3",
+        "short": true
+      }
+    ],
+    "footer": {
+      "text": "CI/CD Pipeline"
     }
-    
-    data, _ := json.Marshal(payload)
-    http.Post(
-        l.apiURL+"/discord/"+l.channelName,
-        "application/json",
-        bytes.NewBuffer(data),
-    )
-}
+  }'
 ```
+
+#### 3. 查詢 Slack 頻道列表
+
+```bash
+curl http://localhost:8080/slack/list
+```
+
+#### 4. 刪除 Slack 頻道
+
+```bash
+curl -X DELETE http://localhost:8080/slack/deployments
+```
+
+## API 參考
+
+### Discord API
+
+| 端點 | 方法 | 說明 |
+|------|------|------|
+| `/discord/list` | GET | 取得所有 Discord 頻道配置 |
+| `/discord/:channelName` | POST | 發送訊息至指定 Discord 頻道 |
+| `/discord/add` | POST | 新增一個或多個 Discord 頻道 |
+| `/discord/:channelName` | DELETE | 刪除指定 Discord 頻道 |
+
+#### Discord 訊息欄位
+
+| 欄位 | 類型 | 必填 | 說明 |
+|------|------|------|------|
+| `title` | string | 是 | Embed 標題 |
+| `description` | string | 是 | Embed 內容描述 |
+| `url` | string | 否 | 標題超連結 |
+| `color` | string | 否 | 側邊顏色（十六進位，如 `#FF5733`） |
+| `timestamp` | string | 否 | ISO8601 時間戳記 |
+| `image` | string | 否 | 大圖片 URL |
+| `thumbnail` | string | 否 | 縮圖 URL |
+| `fields` | array | 否 | 欄位陣列（`name`、`value`、`inline`） |
+| `footer` | object | 否 | Footer 物件（`text`、`icon_url`） |
+| `author` | object | 否 | 作者物件（`name`、`url`、`icon_url`） |
+| `username` | string | 否 | Bot 顯示名稱 |
+| `avatar_url` | string | 否 | Bot 頭像 URL |
+
+### Slack API
+
+| 端點 | 方法 | 說明 |
+|------|------|------|
+| `/slack/list` | GET | 取得所有 Slack 頻道配置 |
+| `/slack/:channelName` | POST | 發送訊息至指定 Slack 頻道 |
+| `/slack/add` | POST | 新增一個或多個 Slack 頻道 |
+| `/slack/:channelName` | DELETE | 刪除指定 Slack 頻道 |
+
+#### Slack 訊息欄位
+
+| 欄位 | 類型 | 必填 | 說明 |
+|------|------|------|------|
+| `text` | string | 是 | 訊息文字（通知與 fallback） |
+| `title` | string | 否 | Attachment 標題 |
+| `title_link` | string | 否 | 標題超連結 |
+| `description` | string | 否 | Attachment 內容 |
+| `pretext` | string | 否 | Attachment 上方文字 |
+| `color` | string | 否 | 側邊顏色（`good`/`warning`/`danger` 或十六進位） |
+| `timestamp` | int64 | 否 | Unix 時間戳記 |
+| `image` | string | 否 | 大圖片 URL |
+| `thumbnail` | string | 否 | 縮圖 URL（右側） |
+| `fields` | array | 否 | 欄位陣列（`title`、`value`、`short`） |
+| `footer` | object | 否 | Footer 物件（`text`、`icon_url`） |
+| `username` | string | 否 | Bot 顯示名稱 |
+| `icon_emoji` | string | 否 | Bot 圖示 emoji（如 `:rocket:`） |
+| `icon_url` | string | 否 | Bot 頭像 URL |
+| `channel` | string | 否 | 目標頻道（如 `#channel` 或 `@user`） |
+| `thread_ts` | string | 否 | 執行緒時間戳記（用於回覆） |
 
 ## 專案結構
 
 ```
-bot/
+goNotify/
 ├── cmd/
 │   └── api/
 │       └── main.go              # 應用程式入口點
 ├── internal/
-│   ├── handler/
-│   │   └── discord.go           # Discord API 處理器
 │   ├── channel/
-│   │   └── discord.go           # Discord Webhook 客戶端
-│   └── bot/
-│       └── line.go              # LINE Bot 整合（待開發）
+│   │   ├── discord.go           # Discord webhook 客戶端
+│   │   └── slack.go             # Slack webhook 客戶端
+│   ├── handler/
+│   │   ├── discord.go           # Discord handler 初始化
+│   │   ├── discordAdd.go        # 新增 Discord 頻道
+│   │   ├── discordSend.go       # 發送 Discord 訊息
+│   │   ├── discordDelete.go     # 刪除 Discord 頻道
+│   │   ├── slack.go             # Slack handler 初始化
+│   │   ├── slackAdd.go          # 新增 Slack 頻道
+│   │   ├── slackSend.go         # 發送 Slack 訊息
+│   │   └── slackDelete.go       # 刪除 Slack 頻道
+│   └── utils/
+│       └── utils.go             # 共用工具函式（檔案 I/O、JSON 處理）
 ├── json/
-│   └── discord_channel.json     # 頻道配置檔案
+│   ├── discord_channel.json     # Discord 頻道配置（自動生成）
+│   └── slack_channel.json       # Slack 頻道配置（自動生成）
 ├── go.mod                       # Go 模組定義
 └── go.sum                       # 依賴版本鎖定
 ```
 
-## 配置說明
+## 設計架構
 
-頻道配置檔案 `json/discord_channel.json` 範例：
-
-```json
-{
-  "alerts": "https://discord.com/api/webhooks/1234567890/abcdefg...",
-  "logs": "https://discord.com/api/webhooks/0987654321/zyxwvut...",
-  "deployments": "https://discord.com/api/webhooks/1122334455/hijklmn..."
-}
+```mermaid
+graph TB
+    A[Client] -->|HTTP Request| B[Gin Router]
+    B --> C{路由分發}
+    
+    C -->|/discord/*| D[Discord Handler]
+    C -->|/slack/*| E[Slack Handler]
+    
+    D --> D1[List]
+    D --> D2[Add]
+    D --> D3[Send]
+    D --> D4[Delete]
+    
+    E --> E1[List]
+    E --> E2[Add]
+    E --> E3[Send]
+    E --> E4[Delete]
+    
+    D3 --> F[Discord Channel]
+    E3 --> G[Slack Channel]
+    
+    F -->|Webhook POST| H[Discord API]
+    G -->|Webhook POST| I[Slack API]
+    
+    D2 --> J[Utils]
+    D4 --> J
+    E2 --> J
+    E4 --> J
+    
+    J -->|Read/Write| K[(JSON Files)]
+    
+    style A fill:#e1f5ff
+    style H fill:#5865f2
+    style I fill:#611f69
+    style K fill:#fff4e6
 ```
 
-此檔案會在執行時自動建立，也可透過 API 動態管理。
+## 使用場景
 
-## 依賴套件
+### 1. CI/CD 管道通知
 
-| 套件 | 版本 | 用途 |
-|------|------|------|
-| [gin-gonic/gin](https://github.com/gin-gonic/gin) | v1.11.0 | HTTP Web 框架 |
-| encoding/json | 標準庫 | JSON 序列化/反序列化 |
-| net/http | 標準庫 | HTTP 客戶端 |
-| sync | 標準庫 | 並發控制 |
+在部署流程中發送狀態更新：
 
-## 安全性考量
+```bash
+# 部署開始
+curl -X POST http://localhost:8080/slack/cicd \
+  -d '{"text": "🚀 開始部署至 Production", "color": "warning"}'
 
-1. **輸入驗證**：所有頻道名稱與 Webhook URL 都經過正則表達式驗證
-2. **並發安全**：使用 `sync.RWMutex` 保護共享的頻道配置映射
-3. **錯誤處理**：完整的錯誤處理與日誌記錄，避免敏感資訊洩漏
-4. **檔案權限**：JSON 配置檔案使用 `0644` 權限（擁有者可讀寫，其他人唯讀）
+# 部署成功
+curl -X POST http://localhost:8080/slack/cicd \
+  -d '{"text": "✅ 部署完成", "color": "good"}'
+```
 
-## 開發計劃
+### 2. 系統監控告警
 
-- [ ] 新增 LINE Notify 整合
-- [ ] 支援 Slack Webhook
-- [ ] 實作訊息佇列機制
-- [ ] 新增 Prometheus metrics 端點
-- [ ] 支援訊息範本功能
-- [ ] 實作訊息發送歷史記錄
+伺服器指標異常時發送告警：
+
+```bash
+curl -X POST http://localhost:8080/discord/monitoring \
+  -d '{
+    "title": "🔴 CPU 告警",
+    "description": "伺服器負載過高",
+    "color": "#FF0000",
+    "fields": [
+      {"name": "主機", "value": "web-01", "inline": true},
+      {"name": "CPU", "value": "98%", "inline": true}
+    ]
+  }'
+```
+
+### 3. 應用程式錯誤通知
+
+捕獲並發送應用程式錯誤：
+
+```go
+func notifyError(err error) {
+    payload := map[string]interface{}{
+        "title":       "Application Error",
+        "description": err.Error(),
+        "color":       "#FF5733",
+    }
+    
+    // 發送至 Discord
+    http.Post("http://localhost:8080/discord/errors", 
+        "application/json", 
+        bytes.NewBuffer(jsonPayload))
+}
+```
 
 ## 授權
 
@@ -429,7 +362,7 @@ MIT License
 
 ## Stars
 
-[![Star History Chart](https://api.star-history.com/svg?repos=pardnchiu/bot&type=Date)](https://star-history.com/#pardnchiu/bot&Date)
+[![Star](https://api.star-history.com/svg?repos=pardnchiu/goNotify&type=Date)](https://www.star-history.com/#pardnchiu/goNotify&Date)
 
 ***
 

@@ -1,59 +1,119 @@
 # Update Log
 
-> Generated: 2026-01-14 00:53
-> v0.5.0 → v0.6.0
+> Generated: 2026-01-16 01:11
+> v0.7.0 → v0.7.1
 
 ## Recommended Commit Message
 
-feat: 完善 Slack webhook API 端點並優化 Discord handler
-
-feat: complete Slack webhook API endpoints and optimize Discord handlers
-
-***
-
-## Summary
-
-新增 Slack webhook 的發送、註冊與刪除 API 端點，完整實作 Slack 頻道管理功能。優化 Discord handler 的檔案讀取邏輯，統一使用 `utils.GetPath()` 工具函式，並改善錯誤處理機制。
-
-## Changes
-
-### FEAT
-- 新增 Slack 訊息發送 API 端點（`POST /slack/:channelName`）
-- 新增 Slack 頻道註冊 API 端點（`POST /slack/add`）
-- 新增 Slack 頻道刪除 API 端點（`DELETE /slack/:channelName`）
-- 實作 `slackAdd.go`、`slackDelete.go`、`slackSend.go` handler 功能
-
-### REFACTOR
-- 優化 `discordAdd.go` 檔案路徑處理，改用 `utils.GetPath()` 統一管理
-- 優化 `discordSend.go` 移除重複的檔案讀取邏輯，改為提前返回錯誤
-- 改善 Discord handler 的 defer 使用時機與錯誤處理流程
-- 簡化 map 複製與檔案寫入邏輯
-
-### UPDATE
-- 在 `slack.go` 中新增 `validSlackWebhook` 正則表達式，用於驗證 Slack webhook URL 格式
+refactor: restructure LINE Bot handler with context propagation and environment variables
+<details>
+<summary>翻譯</summary>
+refactor: 重構 LINE Bot handler，加入 context 傳遞與環境變數支援
+</details>
 
 ***
 
 ## Summary
 
-Add Slack webhook Send, Add, and Delete API endpoints to complete Slack channel management features. Optimize Discord handler file reading logic by using unified `utils.GetPath()` utility function and improve error handling mechanisms.
+Restructure LINE Bot webhook handler with proper context propagation, environment variable configuration, and improved code organization. Add user unfollow handling and Docker development environment.
+<details>
+<summary>翻譯</summary>
+重構 LINE Bot webhook handler，加入適當的 context 傳遞、環境變數設定與改進的程式碼組織。新增使用者取消追蹤處理與 Docker 開發環境。
+</details>
 
 ## Changes
 
 ### FEAT
-- Add Slack message sending API endpoint (`POST /slack/:channelName`)
-- Add Slack channel registration API endpoint (`POST /slack/add`)
-- Add Slack channel deletion API endpoint (`DELETE /slack/:channelName`)
-- Implement `slackAdd.go`, `slackDelete.go`, `slackSend.go` handler functions
+- Add `DeleteUser` database function for soft-delete user records
+- Add `handleUnfollow` event handler for LINE Bot unfollow events
+
+<details>
+<summary>翻譯</summary>
+
+- 新增 `DeleteUser` 資料庫函式，用於軟刪除使用者記錄
+- 新增 `handleUnfollow` 事件處理器，處理 LINE Bot 取消追蹤事件
+
+</details>
 
 ### REFACTOR
-- Optimize `discordAdd.go` file path handling using unified `utils.GetPath()`
-- Optimize `discordSend.go` by removing duplicate file reading logic and returning errors early
-- Improve defer placement and error handling flow in Discord handlers
-- Simplify map copying and file writing logic
+- Restructure `line.go` → `lineWebhook.go` with improved code organization
+- Rename handler type from `LineHandler` to `LinebotHandler`
+- Refactor `InsertUser` to accept `context.Context` parameter
+- Refactor `SelectUserLinebot` to accept `context.Context` parameter
+- Extract command handling into separate `commandGex` method
+- Extract message parsing into `parseMessage` and `verifyMessage` functions
+- Improve error logging with function name prefix pattern
+
+<details>
+<summary>翻譯</summary>
+
+- 重構 `line.go` → `lineWebhook.go`，改進程式碼組織
+- 重新命名 handler 類型從 `LineHandler` 為 `LinebotHandler`
+- 重構 `InsertUser` 接受 `context.Context` 參數
+- 重構 `SelectUserLinebot` 接受 `context.Context` 參數
+- 提取指令處理至獨立的 `commandGex` 方法
+- 提取訊息解析至 `parseMessage` 與 `verifyMessage` 函式
+- 改進錯誤日誌，使用函式名稱前綴模式
+
+</details>
+
+### SECURITY
+- Remove hardcoded LINE Bot credentials from source code
+- Load `LINEBOT_SECRET` and `LINEBOT_TOKEN` from environment variables
+
+<details>
+<summary>翻譯</summary>
+
+- 移除原始碼中硬編碼的 LINE Bot 憑證
+- 從環境變數載入 `LINEBOT_SECRET` 與 `LINEBOT_TOKEN`
+
+</details>
 
 ### UPDATE
-- Add `validSlackWebhook` regex pattern in `slack.go` for Slack webhook URL validation
+- Update server port from 8082 to 8080
+- Add `ImagePreview` field to `LinebotMessage` for image preview URL customization
+- Add context timeout (30s) to webhook and send handlers
+
+<details>
+<summary>翻譯</summary>
+
+- 更新伺服器埠號從 8082 改為 8080
+- 新增 `ImagePreview` 欄位用於自訂圖片預覽 URL
+- 新增 context timeout（30 秒）至 webhook 與發送 handler
+
+</details>
+
+### ADD
+- Add `.env.example` with LINE Bot credential placeholders
+- Add `docker-compose.yml` for containerized development environment
+
+<details>
+<summary>翻譯</summary>
+
+- 新增 `.env.example` 包含 LINE Bot 憑證範本
+- 新增 `docker-compose.yml` 用於容器化開發環境
+
+</details>
+
+### CHORE
+- Add `.env` to `.gitignore`
+
+<details>
+<summary>翻譯</summary>
+
+- 將 `.env` 加入 `.gitignore`
+
+</details>
+
+### DOC
+- Add `reference/linebot.md` with LINE Bot message builder reference code
+
+<details>
+<summary>翻譯</summary>
+
+- 新增 `reference/linebot.md` 包含 LINE Bot 訊息建構器參考程式碼
+
+</details>
 
 ***
 
@@ -61,13 +121,17 @@ Add Slack webhook Send, Add, and Delete API endpoints to complete Slack channel 
 
 | File | Status | Tag |
 |------|--------|-----|
-| `cmd/api/main.go` | Modified | FEAT |
-| `internal/handler/discordAdd.go` | Modified | REFACTOR |
-| `internal/handler/discordSend.go` | Modified | REFACTOR |
-| `internal/handler/slack.go` | Modified | UPDATE |
-| `internal/handler/slackAdd.go` | Added | FEAT |
-| `internal/handler/slackDelete.go` | Added | FEAT |
-| `internal/handler/slackSend.go` | Added | FEAT |
+| `.gitignore` | Modified | CHORE |
+| `cmd/api/main.go` | Modified | UPDATE |
+| `internal/database/insertUser.go` | Modified | REFACTOR |
+| `internal/database/selectUserLinebot.go` | Modified | REFACTOR |
+| `internal/database/deleteUser.go` | Added | FEAT |
+| `internal/handler/line.go` | Deleted | REFACTOR |
+| `internal/handler/lineWebhook.go` | Added | REFACTOR |
+| `internal/handler/lineSend.go` | Modified | UPDATE |
+| `.env.example` | Added | ADD |
+| `docker-compose.yml` | Added | ADD |
+| `reference/linebot.md` | Added | DOC |
 
 ***
 
