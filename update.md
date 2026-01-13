@@ -1,62 +1,79 @@
 # Update Log
 
-> Generated: 2026-01-13 
+> Generated: 2026-01-13 18:16
 
 ## Recommended Commit Message
 
-```
-feat: 實作 Discord webhook 通知 API 服務
-
-建立 Go 專案結構，實作 Discord 通知 API 服務
-支援客製化 embed 訊息、多頻道管理與 webhook 配置
-```
-
-```
-feat: Implement Discord webhook notification API service
-
-Create Go project structure and implement Discord notification API service
-Support customizable embed messages, multi-channel management, and webhook configuration
-```
+feat: 新增動態註冊 Discord 頻道 webhook 的 API 端點
+feat: add API endpoint for dynamically registering Discord channel webhooks
 
 ***
 
 ## Summary
 
-建立 Go 語言通知服務專案，實作 Discord webhook API，支援豐富的 embed 格式，包含標題、描述、圖片、欄位、作者、頁尾等自訂選項，並透過 JSON 檔案管理多個頻道的 webhook URL。
+新增 `/discord/add` API 端點以支援動態註冊 Discord 頻道及 webhook URL，並優化頻道配置載入邏輯，確保每次請求都能獲取最新的配置資料。
 
 ## Changes
 
 ### FEAT
-- 實作 Discord webhook 通知功能，支援完整的 embed 格式
-- 建立 HTTP API 服務，提供 `/discord/:channelName` 端點發送通知
-- 實作多頻道管理系統，透過 JSON 檔案配置 webhook URL
-- 支援自訂 embed 選項：標題、描述、顏色、時間戳記、圖片、縮圖、欄位、作者、頁尾
-- 實作頻道名稱驗證與 webhook URL 快取機制
+- 新增 `/discord/add` POST 端點，支援批量註冊 Discord 頻道及 webhook URL
+- 實作完整的輸入驗證機制，包含頻道名稱格式與 Discord webhook URL 格式檢查
+- 支援自動建立 `discord_channel.json` 配置檔案（若不存在）
+- 新增批量新增頻道功能，可一次註冊多個頻道與 webhook 對應關係
 
-### CHORE
-- 初始化 Go module (`goNotify`) 並配置專案依賴
-- 新增 `.gitignore` 忽略系統檔案與 JSON 配置目錄
-- 引入 Gin web 框架用於 HTTP 路由處理
+### FIX
+- 修正頻道配置快取問題，改為每次 Send 請求都重新載入 `discord_channel.json`，確保配置資料即時性
+- 移除原本的 `channels == nil` 條件判斷，避免配置更新後無法即時生效
+
+### UPDATE
+- 新增 Discord webhook URL 驗證正則表達式 `vaildWebhookURL`
+- 在 Add 端點中加入 `strings` 套件使用，對輸入資料進行 trim 處理
+
+### REFACTOR
+- 抽取 JSON 檔案寫入邏輯至獨立的 `writeJSON` 輔助函式
+- 統一檔案寫入格式為 JSON 縮排格式（2 空格）
+- 改善錯誤處理與日誌記錄的結構
+
+### STYLE
+- 修正 `validChannelName` 正則表達式字串格式，從雙引號改為 backtick
+
+### DOC
+- 為 `Send` 函式新增 API 路由註解：`// POST: /discord/send/:channelName`
+- 為 `Add` 函式新增 API 路由與請求格式註解
 
 ***
 
 ## Summary
 
-Create a Go notification service project implementing Discord webhook API with rich embed format support, including title, description, images, fields, author, footer, and other customization options, with multi-channel webhook URL management via JSON file.
+Added a new `/discord/add` API endpoint to support dynamic registration of Discord channels and webhook URLs, and optimized channel configuration loading logic to ensure the latest configuration data is retrieved on every request.
 
 ## Changes
 
 ### FEAT
-- Implement Discord webhook notification with full embed format support
-- Create HTTP API service with `/discord/:channelName` endpoint for sending notifications
-- Implement multi-channel management system using JSON file for webhook URL configuration
-- Support customizable embed options: title, description, color, timestamp, image, thumbnail, fields, author, footer
-- Implement channel name validation and webhook URL caching mechanism
+- Add `/discord/add` POST endpoint to support batch registration of Discord channels and webhook URLs
+- Implement comprehensive input validation for channel name format and Discord webhook URL format
+- Support automatic creation of `discord_channel.json` configuration file if it doesn't exist
+- Add batch channel registration functionality to register multiple channel-webhook mappings at once
 
-### CHORE
-- Initialize Go module (`goNotify`) and configure project dependencies
-- Add `.gitignore` to exclude system files and JSON configuration directory
-- Integrate Gin web framework for HTTP routing
+### FIX
+- Fix channel configuration caching issue by reloading `discord_channel.json` on every Send request to ensure real-time configuration data
+- Remove original `channels == nil` conditional check to prevent stale configuration after updates
+
+### UPDATE
+- Add Discord webhook URL validation regex pattern `vaildWebhookURL`
+- Import `strings` package in Add endpoint for trimming input data
+
+### REFACTOR
+- Extract JSON file writing logic to standalone `writeJSON` helper function
+- Standardize file writing format to indented JSON (2 spaces)
+- Improve error handling and logging structure
+
+### STYLE
+- Fix `validChannelName` regex string format from double quotes to backticks
+
+### DOC
+- Add API route comment for `Send` function: `// POST: /discord/send/:channelName`
+- Add API route and request format comments for `Add` function
 
 ***
 
@@ -64,10 +81,5 @@ Create a Go notification service project implementing Discord webhook API with r
 
 | File | Status | Tag |
 |------|--------|-----|
-| `.gitignore` | Added | CHORE |
-| `cmd/api/main.go` | Added | FEAT |
-| `go.mod` | Added | CHORE |
-| `go.sum` | Added | CHORE |
-| `internal/bot/line.go` | Added | CHORE |
-| `internal/channel/discord.go` | Added | FEAT |
-| `internal/handler/discord.go` | Added | FEAT |
+| `cmd/api/main.go` | Modified | FEAT |
+| `internal/handler/discord.go` | Modified | FEAT, FIX, UPDATE, REFACTOR, STYLE, DOC |
