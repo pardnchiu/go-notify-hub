@@ -1,4 +1,4 @@
-module goNotify
+module go-notification-bot
 
 go 1.25.1
 

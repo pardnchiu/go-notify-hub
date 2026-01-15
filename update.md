@@ -1,117 +1,55 @@
 # Update Log
 
-> Generated: 2026-01-16 01:11
-> v0.7.0 → v0.7.1
+> Generated: 2026-01-16 01:33
+> v0.7.1 → v0.7.2
 
 ## Recommended Commit Message
 
-refactor: restructure LINE Bot handler with context propagation and environment variables
+refactor: reorganize handlers into separate domain packages
 <details>
 <summary>翻譯</summary>
-refactor: 重構 LINE Bot handler，加入 context 傳遞與環境變數支援
+refactor: 將 handlers 重組為獨立的領域套件
 </details>
 
 ***
 
 ## Summary
 
-Restructure LINE Bot webhook handler with proper context propagation, environment variable configuration, and improved code organization. Add user unfollow handling and Docker development environment.
+Reorganize handler code from monolithic `internal/handler/` package into separate domain packages: `internal/discord/`, `internal/linebot/`, and `internal/slack/` for better modularity and maintainability.
 <details>
 <summary>翻譯</summary>
-重構 LINE Bot webhook handler，加入適當的 context 傳遞、環境變數設定與改進的程式碼組織。新增使用者取消追蹤處理與 Docker 開發環境。
+將 handler 程式碼從單一的 `internal/handler/` 套件重組為獨立的領域套件：`internal/discord/`、`internal/linebot/` 與 `internal/slack/`，以提升模組化與可維護性。
 </details>
 
 ## Changes
 
-### FEAT
-- Add `DeleteUser` database function for soft-delete user records
-- Add `handleUnfollow` event handler for LINE Bot unfollow events
-
-<details>
-<summary>翻譯</summary>
-
-- 新增 `DeleteUser` 資料庫函式，用於軟刪除使用者記錄
-- 新增 `handleUnfollow` 事件處理器，處理 LINE Bot 取消追蹤事件
-
-</details>
-
 ### REFACTOR
-- Restructure `line.go` → `lineWebhook.go` with improved code organization
-- Rename handler type from `LineHandler` to `LinebotHandler`
-- Refactor `InsertUser` to accept `context.Context` parameter
-- Refactor `SelectUserLinebot` to accept `context.Context` parameter
-- Extract command handling into separate `commandGex` method
-- Extract message parsing into `parseMessage` and `verifyMessage` functions
-- Improve error logging with function name prefix pattern
+- Move Discord handlers from `internal/handler/` to `internal/discord/` package
+- Move LINE Bot handlers from `internal/handler/` to `internal/linebot/` package
+- Move Slack handlers from `internal/handler/` to `internal/slack/` package
+- Split LINE Bot code into separate files: `lineWebhook.go`, `lineSend.go`, `handleMessage.go`, `commandGex.go`
+- Update `main.go` imports to use new package paths
+- Rename constructor functions: `NewDiscordHandler` → `discord.New`, `NewSlackHandler` → `slack.New`, `NewLineHandler` → `Linebot.New`
 
 <details>
 <summary>翻譯</summary>
 
-- 重構 `line.go` → `lineWebhook.go`，改進程式碼組織
-- 重新命名 handler 類型從 `LineHandler` 為 `LinebotHandler`
-- 重構 `InsertUser` 接受 `context.Context` 參數
-- 重構 `SelectUserLinebot` 接受 `context.Context` 參數
-- 提取指令處理至獨立的 `commandGex` 方法
-- 提取訊息解析至 `parseMessage` 與 `verifyMessage` 函式
-- 改進錯誤日誌，使用函式名稱前綴模式
+- 將 Discord handlers 從 `internal/handler/` 移至 `internal/discord/` 套件
+- 將 LINE Bot handlers 從 `internal/handler/` 移至 `internal/linebot/` 套件
+- 將 Slack handlers 從 `internal/handler/` 移至 `internal/slack/` 套件
+- 將 LINE Bot 程式碼拆分為獨立檔案：`lineWebhook.go`、`lineSend.go`、`handleMessage.go`、`commandGex.go`
+- 更新 `main.go` imports 使用新的套件路徑
+- 重新命名建構函式：`NewDiscordHandler` → `discord.New`、`NewSlackHandler` → `slack.New`、`NewLineHandler` → `Linebot.New`
 
 </details>
 
-### SECURITY
-- Remove hardcoded LINE Bot credentials from source code
-- Load `LINEBOT_SECRET` and `LINEBOT_TOKEN` from environment variables
+### REMOVE
+- Remove `internal/handler/email.go` placeholder file
 
 <details>
 <summary>翻譯</summary>
 
-- 移除原始碼中硬編碼的 LINE Bot 憑證
-- 從環境變數載入 `LINEBOT_SECRET` 與 `LINEBOT_TOKEN`
-
-</details>
-
-### UPDATE
-- Update server port from 8082 to 8080
-- Add `ImagePreview` field to `LinebotMessage` for image preview URL customization
-- Add context timeout (30s) to webhook and send handlers
-
-<details>
-<summary>翻譯</summary>
-
-- 更新伺服器埠號從 8082 改為 8080
-- 新增 `ImagePreview` 欄位用於自訂圖片預覽 URL
-- 新增 context timeout（30 秒）至 webhook 與發送 handler
-
-</details>
-
-### ADD
-- Add `.env.example` with LINE Bot credential placeholders
-- Add `docker-compose.yml` for containerized development environment
-
-<details>
-<summary>翻譯</summary>
-
-- 新增 `.env.example` 包含 LINE Bot 憑證範本
-- 新增 `docker-compose.yml` 用於容器化開發環境
-
-</details>
-
-### CHORE
-- Add `.env` to `.gitignore`
-
-<details>
-<summary>翻譯</summary>
-
-- 將 `.env` 加入 `.gitignore`
-
-</details>
-
-### DOC
-- Add `reference/linebot.md` with LINE Bot message builder reference code
-
-<details>
-<summary>翻譯</summary>
-
-- 新增 `reference/linebot.md` 包含 LINE Bot 訊息建構器參考程式碼
+- 移除 `internal/handler/email.go` 佔位檔案
 
 </details>
 
@@ -121,17 +59,30 @@ Restructure LINE Bot webhook handler with proper context propagation, environmen
 
 | File | Status | Tag |
 |------|--------|-----|
-| `.gitignore` | Modified | CHORE |
-| `cmd/api/main.go` | Modified | UPDATE |
-| `internal/database/insertUser.go` | Modified | REFACTOR |
-| `internal/database/selectUserLinebot.go` | Modified | REFACTOR |
-| `internal/database/deleteUser.go` | Added | FEAT |
-| `internal/handler/line.go` | Deleted | REFACTOR |
-| `internal/handler/lineWebhook.go` | Added | REFACTOR |
-| `internal/handler/lineSend.go` | Modified | UPDATE |
-| `.env.example` | Added | ADD |
-| `docker-compose.yml` | Added | ADD |
-| `reference/linebot.md` | Added | DOC |
+| `cmd/api/main.go` | Modified | REFACTOR |
+| `internal/handler/discord.go` | Deleted | REFACTOR |
+| `internal/handler/discordAdd.go` | Deleted | REFACTOR |
+| `internal/handler/discordDelete.go` | Deleted | REFACTOR |
+| `internal/handler/discordSend.go` | Deleted | REFACTOR |
+| `internal/handler/slack.go` | Deleted | REFACTOR |
+| `internal/handler/slackAdd.go` | Deleted | REFACTOR |
+| `internal/handler/slackDelete.go` | Deleted | REFACTOR |
+| `internal/handler/slackSend.go` | Deleted | REFACTOR |
+| `internal/handler/lineWebhook.go` | Deleted | REFACTOR |
+| `internal/handler/lineSend.go` | Deleted | REFACTOR |
+| `internal/handler/email.go` | Deleted | REMOVE |
+| `internal/discord/discord.go` | Added | REFACTOR |
+| `internal/discord/add.go` | Added | REFACTOR |
+| `internal/discord/delete.go` | Added | REFACTOR |
+| `internal/discord/send.go` | Added | REFACTOR |
+| `internal/slack/slack.go` | Added | REFACTOR |
+| `internal/slack/add.go` | Added | REFACTOR |
+| `internal/slack/delete.go` | Added | REFACTOR |
+| `internal/slack/send.go` | Added | REFACTOR |
+| `internal/linebot/lineWebhook.go` | Added | REFACTOR |
+| `internal/linebot/lineSend.go` | Added | REFACTOR |
+| `internal/linebot/handleMessage.go` | Added | REFACTOR |
+| `internal/linebot/commandGex.go` | Added | REFACTOR |
 
 ***
 

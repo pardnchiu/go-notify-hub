@@ -1,7 +1,7 @@
-package handler
+package discord
 
 import (
-	"goNotify/internal/utils"
+	"go-notification-bot/internal/utils"
 	"log/slog"
 	"os"
 	"regexp"
@@ -19,7 +19,7 @@ var (
 
 type DiscordHandler struct{}
 
-func NewDiscordHandler() (*DiscordHandler, error) {
+func New() (*DiscordHandler, error) {
 	discordChannelsMu.Lock()
 	defer discordChannelsMu.Unlock()
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"goNotify/internal/utils"
+	"go-notification-bot/internal/utils"
 )
 
 type GexInput struct {

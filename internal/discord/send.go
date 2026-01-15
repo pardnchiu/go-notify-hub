@@ -1,7 +1,7 @@
-package handler
+package discord
 
 import (
-	"goNotify/internal/channel"
+	"go-notification-bot/internal/channel"
 	"log/slog"
 	"net/http"
 

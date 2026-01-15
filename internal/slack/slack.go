@@ -1,7 +1,7 @@
-package handler
+package slack
 
 import (
-	"goNotify/internal/utils"
+	"go-notification-bot/internal/utils"
 	"log/slog"
 	"os"
 	"regexp"
@@ -14,11 +14,12 @@ var (
 	slackChannels     map[string]string
 	slackChannelsMu   sync.RWMutex
 	validSlackWebhook = regexp.MustCompile(`^https://hooks\.slack\.com/services/[A-Z0-9]{8,}/[A-Z0-9]{8,}/[a-zA-Z0-9]{24,}$`)
+	validChannelName  = regexp.MustCompile(`^[0-9A-Za-z@_-]+$`)
 )
 
 type SlackHandler struct{}
 
-func NewSlackHandler() (*SlackHandler, error) {
+func New() (*SlackHandler, error) {
 	slackChannelsMu.Lock()
 	defer slackChannelsMu.Unlock()
 

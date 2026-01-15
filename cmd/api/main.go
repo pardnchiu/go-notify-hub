@@ -1,8 +1,10 @@
 package main
 
 import (
-	"goNotify/internal/database"
-	"goNotify/internal/handler"
+	"go-notification-bot/internal/database"
+	"go-notification-bot/internal/discord"
+	Linebot "go-notification-bot/internal/linebot"
+	"go-notification-bot/internal/slack"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -17,17 +19,17 @@ func main() {
 
 	r := gin.Default()
 
-	discordHandler, err := handler.NewDiscordHandler()
+	discordHandler, err := discord.New()
 	if err != nil {
 		log.Fatal("Failed to create Discord handler:", err)
 	}
 
-	slackHandler, err := handler.NewSlackHandler()
+	slackHandler, err := slack.New()
 	if err != nil {
 		log.Fatal("Failed to create Slack handler:", err)
 	}
 
-	linebotHandler, err := handler.NewLineHandler()
+	linebotHandler, err := Linebot.New()
 	if err != nil {
 		log.Fatal("Failed to create linebot handler:", err)
 	}

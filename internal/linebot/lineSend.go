@@ -1,8 +1,8 @@
-package handler
+package Linebot
 
 import (
 	"context"
-	"goNotify/internal/database"
+	"go-notification-bot/internal/database"
 	"log/slog"
 	"net/http"
 	"time"

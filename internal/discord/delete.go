@@ -1,7 +1,7 @@
-package handler
+package discord
 
 import (
-	"goNotify/internal/utils"
+	"go-notification-bot/internal/utils"
 	"log/slog"
 	"maps"
 	"net/http"
@@ -9,8 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// DELETE: /slack/delete/:channelName
-func (h *SlackHandler) Delete(c *gin.Context) {
+// DELETE: /discord/delete/:channelName
+func (h *DiscordHandler) Delete(c *gin.Context) {
 	channelName := c.Param("channelName")
 	if channelName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "channel name is required"})
@@ -23,26 +23,26 @@ func (h *SlackHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	slackChannelsMu.Lock()
-	defer slackChannelsMu.Unlock()
+	discordChannelsMu.Lock()
+	defer discordChannelsMu.Unlock()
 
-	if slackChannels == nil {
+	if discordChannels == nil {
 		c.JSON(http.StatusOK, gin.H{"message": "ok"})
 		return
 	}
 
-	delete(slackChannels, channelName)
-	newContent := make(map[string]string, len(slackChannels))
-	maps.Copy(newContent, slackChannels)
+	delete(discordChannels, channelName)
+	newContent := make(map[string]string, len(discordChannels))
+	maps.Copy(newContent, discordChannels)
 
-	path, err := utils.GetPath("json", "slack_channel.json")
+	path, err := utils.GetPath("json", "discord_channel.json")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to determine file path"})
 		return
 	}
 
 	if err := utils.WriteJSON(path, newContent); err != nil {
-		slog.Error("Failed to write slack_channel.json", "path", path, "error", err)
+		slog.Error("Failed to write discord_channel.json", "path", path, "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save channel configuration"})
 		return
 	}
