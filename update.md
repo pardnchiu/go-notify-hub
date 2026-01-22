@@ -1,55 +1,89 @@
 # Update Log
 
-> Generated: 2026-01-16 01:33
-> v0.7.1 → v0.7.2
+> Generated: 2026-01-21 08:00 (+00:00)
+> v0.7.2 → v0.8.0
 
 ## Recommended Commit Message
 
-refactor: reorganize handlers into separate domain packages
+feat: add Discord bot with slash command support and refactor LINE Bot module structure
 <details>
 <summary>翻譯</summary>
-refactor: 將 handlers 重組為獨立的領域套件
+feat: 新增 Discord Bot 斜線命令支援，並重構 LINE Bot 模組結構
 </details>
 
 ***
 
 ## Summary
 
-Reorganize handler code from monolithic `internal/handler/` package into separate domain packages: `internal/discord/`, `internal/linebot/`, and `internal/slack/` for better modularity and maintainability.
+Add Discord Bot integration using discordgo library with WebSocket-based slash command handling (/gex, /help). Refactor LINE Bot internal module by splitting into separate files (webhook.go, send.go) and renaming handler method.
 <details>
 <summary>翻譯</summary>
-將 handler 程式碼從單一的 `internal/handler/` 套件重組為獨立的領域套件：`internal/discord/`、`internal/linebot/` 與 `internal/slack/`，以提升模組化與可維護性。
+新增 Discord Bot 整合，使用 discordgo 函式庫實作基於 WebSocket 的斜線命令處理（/gex、/help）。重構 LINE Bot 內部模組，拆分為獨立檔案（webhook.go、send.go）並重新命名 handler 方法。
 </details>
 
 ## Changes
 
-### REFACTOR
-- Move Discord handlers from `internal/handler/` to `internal/discord/` package
-- Move LINE Bot handlers from `internal/handler/` to `internal/linebot/` package
-- Move Slack handlers from `internal/handler/` to `internal/slack/` package
-- Split LINE Bot code into separate files: `lineWebhook.go`, `lineSend.go`, `handleMessage.go`, `commandGex.go`
-- Update `main.go` imports to use new package paths
-- Rename constructor functions: `NewDiscordHandler` → `discord.New`, `NewSlackHandler` → `slack.New`, `NewLineHandler` → `Linebot.New`
+### FEAT
+- Add Discord Bot with WebSocket session management and slash command handler
+- Implement `/gex $<ticker>` command to query GEX data from database
+- Implement `/help` command displaying available commands
+- Add multiple reply methods: text, image file, image URL, and image reader
+- Integrate godotenv for `.env` file loading at startup
 
 <details>
 <summary>翻譯</summary>
 
-- 將 Discord handlers 從 `internal/handler/` 移至 `internal/discord/` 套件
-- 將 LINE Bot handlers 從 `internal/handler/` 移至 `internal/linebot/` 套件
-- 將 Slack handlers 從 `internal/handler/` 移至 `internal/slack/` 套件
-- 將 LINE Bot 程式碼拆分為獨立檔案：`lineWebhook.go`、`lineSend.go`、`handleMessage.go`、`commandGex.go`
-- 更新 `main.go` imports 使用新的套件路徑
-- 重新命名建構函式：`NewDiscordHandler` → `discord.New`、`NewSlackHandler` → `slack.New`、`NewLineHandler` → `Linebot.New`
+- 新增 Discord Bot，支援 WebSocket session 管理與斜線命令處理
+- 實作 `/gex $<ticker>` 命令，從資料庫查詢 GEX 資料
+- 實作 `/help` 命令，顯示可用指令
+- 新增多種回覆方式：純文字、圖片檔案、圖片 URL、圖片 reader
+- 整合 godotenv，於啟動時載入 `.env` 檔案
 
 </details>
 
-### REMOVE
-- Remove `internal/handler/email.go` placeholder file
+### UPDATE
+- Modify `selectTicker.go` query to use `ORDER BY id DESC` instead of filtering by date
+- Rename LINE Bot handler method from `LinebotSend` to `Send`
 
 <details>
 <summary>翻譯</summary>
 
-- 移除 `internal/handler/email.go` 佔位檔案
+- 修改 `selectTicker.go` 查詢，改用 `ORDER BY id DESC` 取代日期篩選
+- 重新命名 LINE Bot handler 方法，由 `LinebotSend` 改為 `Send`
+
+</details>
+
+### REFACTOR
+- Split LINE Bot module into separate files: `webhook.go` for webhook handling and `send.go` for message sending
+- Remove old `lineSend.go` and `lineWebhook.go` files
+
+<details>
+<summary>翻譯</summary>
+
+- 拆分 LINE Bot 模組為獨立檔案：`webhook.go` 處理 webhook，`send.go` 處理訊息發送
+- 移除舊有的 `lineSend.go` 與 `lineWebhook.go` 檔案
+
+</details>
+
+### STYLE
+- Standardize comment format with `* ` prefix for API endpoint documentation across Discord and Slack handlers
+
+<details>
+<summary>翻譯</summary>
+
+- 統一註解格式，在 Discord 與 Slack handler 的 API 端點文件加上 `* ` 前綴
+
+</details>
+
+### CHORE
+- Add `DISCORD_TOKEN` to `.env.example`
+- Add dependencies: `github.com/bwmarrin/discordgo`, `github.com/gorilla/websocket`, `github.com/joho/godotenv`
+
+<details>
+<summary>翻譯</summary>
+
+- 在 `.env.example` 新增 `DISCORD_TOKEN`
+- 新增依賴：`github.com/bwmarrin/discordgo`、`github.com/gorilla/websocket`、`github.com/joho/godotenv`
 
 </details>
 
@@ -59,30 +93,24 @@ Reorganize handler code from monolithic `internal/handler/` package into separat
 
 | File | Status | Tag |
 |------|--------|-----|
-| `cmd/api/main.go` | Modified | REFACTOR |
-| `internal/handler/discord.go` | Deleted | REFACTOR |
-| `internal/handler/discordAdd.go` | Deleted | REFACTOR |
-| `internal/handler/discordDelete.go` | Deleted | REFACTOR |
-| `internal/handler/discordSend.go` | Deleted | REFACTOR |
-| `internal/handler/slack.go` | Deleted | REFACTOR |
-| `internal/handler/slackAdd.go` | Deleted | REFACTOR |
-| `internal/handler/slackDelete.go` | Deleted | REFACTOR |
-| `internal/handler/slackSend.go` | Deleted | REFACTOR |
-| `internal/handler/lineWebhook.go` | Deleted | REFACTOR |
-| `internal/handler/lineSend.go` | Deleted | REFACTOR |
-| `internal/handler/email.go` | Deleted | REMOVE |
-| `internal/discord/discord.go` | Added | REFACTOR |
-| `internal/discord/add.go` | Added | REFACTOR |
-| `internal/discord/delete.go` | Added | REFACTOR |
-| `internal/discord/send.go` | Added | REFACTOR |
-| `internal/slack/slack.go` | Added | REFACTOR |
-| `internal/slack/add.go` | Added | REFACTOR |
-| `internal/slack/delete.go` | Added | REFACTOR |
-| `internal/slack/send.go` | Added | REFACTOR |
-| `internal/linebot/lineWebhook.go` | Added | REFACTOR |
-| `internal/linebot/lineSend.go` | Added | REFACTOR |
-| `internal/linebot/handleMessage.go` | Added | REFACTOR |
-| `internal/linebot/commandGex.go` | Added | REFACTOR |
+| `internal/discord/bot.go` | Added | FEAT |
+| `cmd/api/main.go` | Modified | FEAT |
+| `internal/database/selectTicker.go` | Modified | UPDATE |
+| `internal/linebot/webhook.go` | Added | REFACTOR |
+| `internal/linebot/send.go` | Added | REFACTOR |
+| `internal/linebot/lineSend.go` | Deleted | REFACTOR |
+| `internal/linebot/lineWebhook.go` | Deleted | REFACTOR |
+| `internal/discord/add.go` | Modified | STYLE |
+| `internal/discord/delete.go` | Modified | STYLE |
+| `internal/discord/discord.go` | Modified | STYLE |
+| `internal/discord/send.go` | Modified | STYLE |
+| `internal/slack/add.go` | Modified | STYLE |
+| `internal/slack/delete.go` | Modified | STYLE |
+| `internal/slack/send.go` | Modified | STYLE |
+| `internal/slack/slack.go` | Modified | STYLE |
+| `.env.example` | Modified | CHORE |
+| `go.mod` | Modified | CHORE |
+| `go.sum` | Modified | CHORE |
 
 ***
 

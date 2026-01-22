@@ -40,7 +40,7 @@ func New() (*SlackHandler, error) {
 	return &SlackHandler{}, nil
 }
 
-// GET: /slack/list
+// * GET: /slack/list
 func (h *SlackHandler) List(c *gin.Context) {
 	slackChannelsMu.RLock()
 	defer slackChannelsMu.RUnlock()

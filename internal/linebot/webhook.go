@@ -46,6 +46,7 @@ func New() (*LinebotHandler, error) {
 	return &LinebotHandler{}, nil
 }
 
+// * POST: /linebot/webhook
 func (h *LinebotHandler) Webhook(c *gin.Context) {
 	events, err := Linebot.ParseRequest(c.Request)
 	if err != nil {

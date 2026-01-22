@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// POST: /slack/send/:channelName
+// * POST: /slack/send/:channelName
 func (h *SlackHandler) Send(c *gin.Context) {
 	channelName := c.Param("channelName")
 	if channelName == "" {

@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// DELETE: /slack/delete/:channelName
+// * DELETE: /slack/delete/:channelName
 func (h *SlackHandler) Delete(c *gin.Context) {
 	channelName := c.Param("channelName")
 	if channelName == "" {

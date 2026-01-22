@@ -40,7 +40,7 @@ func New() (*DiscordHandler, error) {
 	return &DiscordHandler{}, nil
 }
 
-// GET: /discord/list
+// * GET: /discord/list
 func (h *DiscordHandler) List(c *gin.Context) {
 	discordChannelsMu.RLock()
 	defer discordChannelsMu.RUnlock()

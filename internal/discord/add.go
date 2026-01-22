@@ -11,8 +11,8 @@ import (
 	"go-notification-bot/internal/utils"
 )
 
-// POST: /discord/add
-// BODY: { datas: [{ "name": "name", "webhook": "url"}] }
+// * POST: /discord/add
+// * BODY: { datas: [{ "name": "name", "webhook": "url"}] }
 func (h *DiscordHandler) Add(c *gin.Context) {
 	var req struct {
 		Datas []struct {

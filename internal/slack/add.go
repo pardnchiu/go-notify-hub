@@ -11,8 +11,8 @@ import (
 	"go-notification-bot/internal/utils"
 )
 
-// POST: /slack/add
-// BODY: { datas: [{ "name": "name", "webhook": "url"}] }
+// * POST: /slack/add
+// * BODY: { datas: [{ "name": "name", "webhook": "url"}] }
 func (h *SlackHandler) Add(c *gin.Context) {
 	var req struct {
 		Datas []struct {

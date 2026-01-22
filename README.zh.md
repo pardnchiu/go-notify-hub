@@ -1,183 +1,233 @@
 > [!NOTE]
-> 此 README 由 Claude Code 生成，英文版請參閱 [這裡](./README.md)。
+> 此 README 由 [Claude Code](https://github.com/pardnchiu/skill-readme-generate) 生成，英文版請參閱 [這裡](./README.md)。
 
 # go-notification-bot
 
-[![Go](https://img.shields.io/badge/Go-1.25.1-00ADD8?logo=go&logoColor=white)](https://go.dev)
-[![Gin](https://img.shields.io/badge/Gin-1.11.0-00ADD8)](https://gin-gonic.com)
+> 多平台通知機器人服務，整合 Discord、Slack 與 LINE Bot，提供統一的 API 介面發送訊息與管理頻道。
 
-> 多頻道通知服務，整合 Discord、Slack 與 LINE Bot，提供統一的 REST API 介面進行訊息推送與 Webhook 管理。
+## 目錄
+
+- [功能特點](#功能特點)
+- [架構](#架構)
+- [安裝](#安裝)
+- [設定](#設定)
+- [使用方法](#使用方法)
+- [API 參考](#api-參考)
+- [授權](#授權)
+- [Author](#author)
 
 ## 功能特點
 
-- **多平台支援**：整合 Discord Webhook、Slack Webhook 與 LINE Bot Messaging API
-- **統一 API**：透過 REST API 管理所有通知頻道
-- **Webhook 管理**：支援新增、刪除、列表查詢頻道設定
-- **LINE Bot 指令**：支援自訂指令解析（如 `/gex $TICKER`）
-- **PostgreSQL 整合**：使用者管理與資料持久化
+- **多平台整合**：支援 Discord Webhook、Slack Webhook 與 LINE Bot
+- **統一 API**：透過 RESTful API 管理所有通知頻道
+- **Discord Bot 指令**：支援 Slash Command 與傳統訊息指令
+- **LINE Bot 互動**：自動處理追蹤/取消追蹤事件與訊息指令
+- **股票資訊查詢**：整合 GEX 資料查詢功能
+- **批次推播**：LINE Bot 支援最多 500 位使用者的批次訊息推播
+- **頻道管理**：動態新增、刪除與列出已註冊頻道
 
 ## 架構
 
-```mermaid
-graph TB
-    subgraph Client
-        A[HTTP Request]
-    end
-
-    subgraph API["Gin Server :8080"]
-        B[Router]
-        B --> C[Discord Handler]
-        B --> D[Slack Handler]
-        B --> E[LINE Bot Handler]
-    end
-
-    subgraph Storage
-        F[(PostgreSQL)]
-        G[JSON Files]
-    end
-
-    subgraph External["外部服務"]
-        H[Discord Webhook]
-        I[Slack Webhook]
-        J[LINE Messaging API]
-    end
-
-    A --> B
-    C --> G
-    C --> H
-    D --> G
-    D --> I
-    E --> F
-    E --> J
 ```
-
-### 目錄結構
-
-```
-go-notification-bot/
-├── cmd/api/           # 應用程式進入點
-├── internal/
-│   ├── channel/       # 訊息發送邏輯（Discord、Slack）
-│   ├── database/      # PostgreSQL 資料庫操作
-│   ├── discord/       # Discord handler
-│   ├── linebot/       # LINE Bot handler
-│   ├── slack/         # Slack handler
-│   └── utils/         # 共用工具函式
-└── json/              # 頻道設定檔儲存
-```
-
-### 請求流程
-
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant G as Gin Router
-    participant H as Handler
-    participant S as Storage
-    participant E as External Service
-
-    C->>G: HTTP Request
-    G->>H: Route to Handler
-    H->>S: Read/Write Config
-    H->>E: Send Notification
-    E-->>H: Response
-    H-->>C: JSON Response
+cmd/
+└── api/
+    └── main.go          # 程式進入點
+internal/
+├── channel/
+│   ├── discord.go       # Discord Webhook 發送邏輯
+│   └── slack.go         # Slack Webhook 發送邏輯
+├── database/
+│   ├── pg.go            # PostgreSQL 連線管理
+│   ├── insertUser.go    # 新增使用者
+│   ├── deleteUser.go    # 刪除使用者
+│   ├── selectUserLinebot.go  # 查詢 LINE Bot 使用者
+│   └── selectTicker.go  # 查詢股票資訊
+├── discord/
+│   ├── discord.go       # Discord Handler 初始化
+│   ├── bot.go           # Discord Bot（Slash Command）
+│   ├── send.go          # 發送訊息
+│   ├── add.go           # 新增頻道
+│   └── delete.go        # 刪除頻道
+├── linebot/
+│   ├── webhook.go       # LINE Bot Webhook 處理
+│   ├── send.go          # 批次推播
+│   ├── handleMessage.go # 訊息處理
+│   └── commandGex.go    # GEX 指令
+├── slack/
+│   ├── slack.go         # Slack Handler 初始化
+│   ├── send.go          # 發送訊息
+│   ├── add.go           # 新增頻道
+│   └── delete.go        # 刪除頻道
+└── utils/
+    └── utils.go         # 通用工具函式
 ```
 
 ## 安裝
 
 ```bash
 git clone https://github.com/pardnchiu/go-notification-bot.git
-cd bot
+cd go-notification-bot
 go mod download
 ```
 
 ## 設定
 
-建立 `.env` 檔案：
+建立 `.env` 檔案並填入以下環境變數：
 
 ```env
-LINEBOT_SECRET=your_line_bot_secret
-LINEBOT_TOKEN=your_line_bot_token
-DATABASE_URL=postgres://user:password@localhost:5432/dbname
+LINEBOT_SECRET=your_line_channel_secret
+LINEBOT_TOKEN=your_line_channel_access_token
+DISCORD_TOKEN=your_discord_bot_token
 ```
 
-## 執行
+## 使用方法
+
+### 啟動伺服器
 
 ```bash
 go run cmd/api/main.go
 ```
 
-或使用 Docker：
+伺服器將於 `:8080` 啟動。
+
+### Discord Webhook 發送
 
 ```bash
-docker-compose up
+# 新增頻道
+curl -X POST http://localhost:8080/discord/add \
+  -H "Content-Type: application/json" \
+  -d '{
+    "datas": [
+      {"name": "alerts", "webhook": "https://discord.com/api/webhooks/..."}
+    ]
+  }'
+
+# 發送訊息
+curl -X POST http://localhost:8080/discord/alerts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "系統通知",
+    "description": "伺服器已啟動"
+  }'
 ```
 
-## API 端點
+### Slack Webhook 發送
+
+```bash
+# 新增頻道
+curl -X POST http://localhost:8080/slack/add \
+  -H "Content-Type: application/json" \
+  -d '{
+    "datas": [
+      {"name": "general", "webhook": "https://hooks.slack.com/services/..."}
+    ]
+  }'
+
+# 發送訊息
+curl -X POST http://localhost:8080/slack/general \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "伺服器已啟動"
+  }'
+```
+
+### LINE Bot 推播
+
+```bash
+# 推播給所有追蹤者
+curl -X POST http://localhost:8080/linebot/send/all \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "系統公告"
+  }'
+```
+
+## API 參考
 
 ### Discord
 
 | 方法 | 路徑 | 說明 |
 |------|------|------|
-| GET | `/discord/list` | 列出所有已註冊的 Discord 頻道 |
-| POST | `/discord/add` | 新增 Discord Webhook 頻道 |
-| DELETE | `/discord/delete/:channelName` | 刪除指定頻道 |
-| POST | `/discord/send/:channelName` | 發送訊息至指定頻道 |
+| GET | `/discord/list` | 列出所有已註冊頻道 |
+| POST | `/discord/add` | 新增頻道 |
+| POST | `/discord/:channelName` | 發送訊息至指定頻道 |
+| DELETE | `/discord/:channelName` | 刪除頻道 |
+
+#### Discord 訊息格式
+
+```json
+{
+  "title": "標題",
+  "description": "內容",
+  "url": "https://example.com",
+  "color": "#FF5733",
+  "timestamp": "2025-01-01T00:00:00Z",
+  "image": "https://example.com/image.png",
+  "thumbnail": "https://example.com/thumb.png",
+  "fields": [
+    {"name": "欄位名稱", "value": "欄位值", "inline": true}
+  ],
+  "footer": {"text": "頁尾文字"},
+  "author": {"name": "作者名稱"}
+}
+```
 
 ### Slack
 
 | 方法 | 路徑 | 說明 |
 |------|------|------|
-| GET | `/slack/list` | 列出所有已註冊的 Slack 頻道 |
-| POST | `/slack/add` | 新增 Slack Webhook 頻道 |
-| DELETE | `/slack/delete/:channelName` | 刪除指定頻道 |
-| POST | `/slack/send/:channelName` | 發送訊息至指定頻道 |
+| GET | `/slack/list` | 列出所有已註冊頻道 |
+| POST | `/slack/add` | 新增頻道 |
+| POST | `/slack/:channelName` | 發送訊息至指定頻道 |
+| DELETE | `/slack/:channelName` | 刪除頻道 |
+
+#### Slack 訊息格式
+
+```json
+{
+  "text": "訊息內容",
+  "title": "標題",
+  "description": "附件內容",
+  "color": "#FF5733",
+  "image": "https://example.com/image.png",
+  "fields": [
+    {"title": "欄位名稱", "value": "欄位值", "short": true}
+  ],
+  "footer": {"text": "頁尾文字"}
+}
+```
 
 ### LINE Bot
 
 | 方法 | 路徑 | 說明 |
 |------|------|------|
-| POST | `/linebot/webhook` | LINE Bot Webhook 接收端點 |
-| POST | `/linebot/send/all` | 群發訊息給所有訂閱用戶 |
+| POST | `/linebot/webhook` | LINE Webhook 端點 |
+| POST | `/linebot/send/all` | 推播給所有追蹤者 |
 
-## 使用範例
+#### LINE Bot 訊息格式
 
-### 新增 Discord 頻道
-
-```bash
-curl -X POST http://localhost:8080/discord/add \
-  -H "Content-Type: application/json" \
-  -d '{
-    "datas": [{
-      "name": "general",
-      "webhook": "https://discord.com/api/webhooks/..."
-    }]
-  }'
+```json
+{
+  "text": "訊息內容",
+  "image": "https://example.com/image.png",
+  "image_preview": "https://example.com/preview.png"
+}
 ```
 
-### 發送 Discord 訊息
+### Bot 指令
 
-```bash
-curl -X POST http://localhost:8080/discord/send/general \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "通知標題",
-    "description": "訊息內容"
-  }'
-```
+#### Discord
 
-### LINE Bot 群發訊息
+| 指令 | 說明 |
+|------|------|
+| `/gex <ticker>` | 查詢指定股票的 GEX 資料 |
+| `/help` | 顯示可用指令 |
 
-```bash
-curl -X POST http://localhost:8080/linebot/send/all \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "Hello, World!",
-    "image": "https://example.com/image.png",
-    "image_preview": "https://example.com/image_preview.png"
-  }'
-```
+#### LINE Bot
+
+| 指令 | 說明 |
+|------|------|
+| `/gex $<ticker>` | 查詢指定股票的 GEX 資料 |
 
 ## 授權
 

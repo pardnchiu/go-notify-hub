@@ -6,11 +6,18 @@ import (
 	Linebot "go-notification-bot/internal/linebot"
 	"go-notification-bot/internal/slack"
 	"log"
+	"log/slog"
+	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		slog.Warn("no .env file found")
+	}
+
 	db, err := database.NewDB()
 	if err != nil {
 		log.Fatal(err)
@@ -18,6 +25,14 @@ func main() {
 	defer db.Close()
 
 	r := gin.Default()
+
+	token := os.Getenv("DISCORD_TOKEN")
+	bot, err := discord.NewBot(token)
+	if err != nil {
+		slog.Error("failed to create bot", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+	defer bot.Close()
 
 	discordHandler, err := discord.New()
 	if err != nil {
@@ -45,7 +60,7 @@ func main() {
 	r.DELETE("/slack/:channelName", slackHandler.Delete)
 
 	r.POST("/linebot/webhook", linebotHandler.Webhook)
-	r.POST("/linebot/send/all", linebotHandler.LinebotSend)
+	r.POST("/linebot/send/all", linebotHandler.Send)
 
 	r.NoRoute(func(c *gin.Context) {
 		select {}

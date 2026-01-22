@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"go-notification-bot/internal/utils"
 )
 
 type GexInput struct {
@@ -45,11 +44,10 @@ func SelectTicker(ticker string) (GexInput, error) {
 		expiry_far_term
 	FROM gex_input
 	WHERE ticker = $1
-	AND date = $2
+	ORDER BY id  DESC
 	LIMIT 1
 	`,
 		ticker,
-		utils.GetWorkDate(-1),
 	)
 
 	err := row.Scan(

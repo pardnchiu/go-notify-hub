@@ -18,7 +18,7 @@ type LinebotMessage struct {
 }
 
 // * POST: /linebot/send/all
-func (h *LinebotHandler) LinebotSend(c *gin.Context) {
+func (h *LinebotHandler) Send(c *gin.Context) {
 	const fn = "LinebotHandler/LinebotSend"
 	var (
 		req LinebotMessage
@@ -41,7 +41,7 @@ func (h *LinebotHandler) LinebotSend(c *gin.Context) {
 
 	// * Line boardcast max is 500 messages per request
 	if len(userIDs) <= 500 {
-		err := linebotSend(ctx, userIDs, req.Text, req.Image, req.ImagePreview)
+		err := send(ctx, userIDs, req.Text, req.Image, req.ImagePreview)
 		if err != nil {
 			slog.Error(fn+"[2]", "error", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to send message"})
@@ -51,7 +51,7 @@ func (h *LinebotHandler) LinebotSend(c *gin.Context) {
 
 	for i := 0; i < len(userIDs); i += 500 {
 		end := min(i+500, len(userIDs))
-		err := linebotSend(ctx, userIDs[i:end], req.Text, req.Image, req.ImagePreview)
+		err := send(ctx, userIDs[i:end], req.Text, req.Image, req.ImagePreview)
 		if err != nil {
 			slog.Error(fn+"[3]", "error", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to send message"})
@@ -60,7 +60,7 @@ func (h *LinebotHandler) LinebotSend(c *gin.Context) {
 	}
 }
 
-func linebotSend(ctx context.Context, userIDs []string, text, image, imagePreview string) error {
+func send(ctx context.Context, userIDs []string, text, image, imagePreview string) error {
 	if image == "" {
 		_, err := Linebot.Multicast(userIDs,
 			linebot.NewTextMessage(text),

@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// POST: /discord/send/:channelName
+// * POST: /discord/send/:channelName
 func (h *DiscordHandler) Send(c *gin.Context) {
 	channelName := c.Param("channelName")
 	if channelName == "" {
