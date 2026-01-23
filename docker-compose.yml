@@ -9,4 +9,4 @@ services:
       - LINEBOT_SECRET=${LINEBOT_SECRET}
       - LINEBOT_TOKEN=${LINEBOT_TOKEN}
     ports:
-      - "8082:8080"
+      - "8080:8080"

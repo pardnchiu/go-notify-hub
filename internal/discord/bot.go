@@ -2,7 +2,7 @@ package discord
 
 import (
 	"fmt"
-	"go-notification-bot/internal/database"
+	"go-notify-hub/internal/database"
 	"io"
 	"log/slog"
 	"os"

@@ -2,7 +2,7 @@ package Linebot
 
 import (
 	"context"
-	"go-notification-bot/internal/database"
+	"go-notify-hub/internal/database"
 	"log"
 	"log/slog"
 	"net/http"

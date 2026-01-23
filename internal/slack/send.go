@@ -1,7 +1,7 @@
 package slack
 
 import (
-	"go-notification-bot/internal/channel"
+	"go-notify-hub/internal/channel"
 	"log/slog"
 	"net/http"
 

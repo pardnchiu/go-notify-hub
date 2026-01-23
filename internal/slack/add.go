@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"go-notification-bot/internal/utils"
+	"go-notify-hub/internal/utils"
 )
 
 // * POST: /slack/add

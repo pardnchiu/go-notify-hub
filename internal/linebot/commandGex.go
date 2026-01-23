@@ -3,7 +3,7 @@ package Linebot
 import (
 	"context"
 	"fmt"
-	"go-notification-bot/internal/database"
+	"go-notify-hub/internal/database"
 	"log/slog"
 	"strings"
 	"time"

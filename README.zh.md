@@ -1,7 +1,7 @@
 > [!NOTE]
 > 此 README 由 [Claude Code](https://github.com/pardnchiu/skill-readme-generate) 生成，英文版請參閱 [這裡](./README.md)。
 
-# go-notification-bot
+# go-notify-hub
 
 > 多平台通知機器人服務，整合 Discord、Slack 與 LINE Bot，提供統一的 API 介面發送訊息與管理頻道。
 
@@ -65,8 +65,8 @@ internal/
 ## 安裝
 
 ```bash
-git clone https://github.com/pardnchiu/go-notification-bot.git
-cd go-notification-bot
+git clone https://github.com/pardnchiu/go-notify-hub.git
+cd go-notify-hub
 go mod download
 ```
 

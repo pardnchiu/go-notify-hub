@@ -1,7 +1,7 @@
 package discord
 
 import (
-	"go-notification-bot/internal/utils"
+	"go-notify-hub/internal/utils"
 	"log/slog"
 	"maps"
 	"net/http"

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"go-notification-bot/internal/database"
-	"go-notification-bot/internal/discord"
-	Linebot "go-notification-bot/internal/linebot"
-	"go-notification-bot/internal/slack"
+	"go-notify-hub/internal/database"
+	"go-notify-hub/internal/discord"
+	Linebot "go-notify-hub/internal/linebot"
+	"go-notify-hub/internal/slack"
 	"log"
 	"log/slog"
 	"os"
