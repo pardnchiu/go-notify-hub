@@ -3,7 +3,10 @@ services:
     image: docker.io/library/golang:1.25.1-alpine
     working_dir: /app
     volumes:
-      - .:/app
-    command: go run /app/cmd/api/main.go
+      - .:/app:z
+      - ./data:/data:z
+    environment:
+      - CGO_ENABLED=1
+    command: sh -c "apk add --no-cache gcc musl-dev sqlite && go run /app/cmd/api/main.go"
     ports:
       - "8080:8080"
