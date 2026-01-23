@@ -3,6 +3,7 @@ package main
 import (
 	"go-notify-hub/internal/database"
 	"go-notify-hub/internal/discord"
+	"go-notify-hub/internal/email"
 	Linebot "go-notify-hub/internal/linebot"
 	"go-notify-hub/internal/slack"
 	"log"
@@ -74,6 +75,13 @@ func main() {
 		r.POST("/linebot/webhook", linebotHandler.Webhook)
 		r.POST("/linebot/send/all", linebotHandler.Send)
 	}
+
+	emailHandler, err := email.New()
+	if err != nil {
+		log.Fatal("Failed to create email handler:", err)
+	}
+	r.POST("/email/send", emailHandler.Send)
+	r.POST("/email/send/bulk", emailHandler.SendBulk)
 
 	r.NoRoute(func(c *gin.Context) {
 		select {}
