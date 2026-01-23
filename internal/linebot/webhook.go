@@ -19,7 +19,6 @@ var (
 	Linebot      *linebot.Client
 	linebotMu    sync.Mutex
 	vaildCommand = regexp.MustCompile(`^/([A-Za-z0-9]+)`) // detect command syntax
-	vaildTicker  = regexp.MustCompile(`\$[A-Za-z]{3,5}`)  // check stock ticker
 )
 
 type LinebotHandler struct{}
@@ -79,7 +78,7 @@ func (h *LinebotHandler) handleFollow(ctx context.Context, event *linebot.Event)
 		return
 	}
 
-	err := database.InsertUser(ctx, userID)
+	err := database.DB.InsertUser(ctx, userID)
 	if err != nil {
 		slog.Error(fn+": failed to insert user", "userID", userID, "error", err)
 		return
@@ -96,7 +95,7 @@ func (h *LinebotHandler) handleUnfollow(ctx context.Context, event *linebot.Even
 		return
 	}
 
-	err := database.DeleteUser(ctx, userID)
+	err := database.DB.DeleteUser(ctx, userID)
 	if err != nil {
 		slog.Error(fn+": failed to delete user", "userID", userID, "error", err)
 		return

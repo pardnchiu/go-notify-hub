@@ -39,11 +39,6 @@ func (h *LinebotHandler) handleMessage(ctx context.Context, event *linebot.Event
 		}
 		return
 	}
-
-	switch parseMsg.Cmd {
-	case "/gex":
-		h.commandGex(ctx, parseMsg, event, bot)
-	}
 }
 
 type Message struct {

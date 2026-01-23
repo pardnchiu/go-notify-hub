@@ -8,17 +8,35 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func init() {
 	if err := godotenv.Load(); err != nil {
-		slog.Warn("no .env file found")
+		slog.Warn("failed to load .env",
+			slog.String("error", err.Error()))
+	}
+}
+
+func main() {
+	dbPath := os.Getenv("DB_PATH")
+	if dbPath == "" {
+		if _, err := os.Stat("/.dockerenv"); err == nil {
+			dbPath = "/data/database.db"
+		} else {
+			home, _ := os.UserHomeDir()
+			dbPath = filepath.Join(home, ".go-notify-hub", "database.db")
+			dir := filepath.Dir(dbPath)
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				log.Fatalf("Failed to create directory %s: %v", dir, err)
+			}
+		}
 	}
 
-	db, err := database.NewDB()
+	db, err := database.NewSQLite(dbPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -26,27 +44,9 @@ func main() {
 
 	r := gin.Default()
 
-	token := os.Getenv("DISCORD_TOKEN")
-	bot, err := discord.NewBot(token)
-	if err != nil {
-		slog.Error("failed to create bot", slog.String("error", err.Error()))
-		os.Exit(1)
-	}
-	defer bot.Close()
-
 	discordHandler, err := discord.New()
 	if err != nil {
 		log.Fatal("Failed to create Discord handler:", err)
-	}
-
-	slackHandler, err := slack.New()
-	if err != nil {
-		log.Fatal("Failed to create Slack handler:", err)
-	}
-
-	linebotHandler, err := Linebot.New()
-	if err != nil {
-		log.Fatal("Failed to create linebot handler:", err)
 	}
 
 	r.GET("/discord/list", discordHandler.List)
@@ -54,13 +54,26 @@ func main() {
 	r.POST("/discord/add", discordHandler.Add)
 	r.DELETE("/discord/:channelName", discordHandler.Delete)
 
+	slackHandler, err := slack.New()
+	if err != nil {
+		log.Fatal("Failed to create Slack handler:", err)
+	}
+
 	r.GET("/slack/list", slackHandler.List)
 	r.POST("/slack/:channelName", slackHandler.Send)
 	r.POST("/slack/add", slackHandler.Add)
 	r.DELETE("/slack/:channelName", slackHandler.Delete)
 
-	r.POST("/linebot/webhook", linebotHandler.Webhook)
-	r.POST("/linebot/send/all", linebotHandler.Send)
+	secret := os.Getenv("LINEBOT_SECRET")
+	token := os.Getenv("LINEBOT_TOKEN")
+	if secret != "" && token != "" {
+		linebotHandler, err := Linebot.New()
+		if err != nil {
+			log.Fatal("Failed to create linebot handler:", err)
+		}
+		r.POST("/linebot/webhook", linebotHandler.Webhook)
+		r.POST("/linebot/send/all", linebotHandler.Send)
+	}
 
 	r.NoRoute(func(c *gin.Context) {
 		select {}

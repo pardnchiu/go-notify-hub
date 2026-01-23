@@ -32,7 +32,7 @@ func (h *LinebotHandler) Send(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	userIDs, err := database.SelectUserLinebot(ctx)
+	userIDs, err := database.DB.SelectUserLinebot(ctx)
 	if err != nil {
 		slog.Error(fn+"[1]", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user IDs"})

@@ -5,17 +5,18 @@ import (
 	"time"
 )
 
-func InsertUser(ctx context.Context, uid string) error {
-	_, err := PG.ExecContext(ctx, `
-	INSERT INTO user_linebot (uid, created_at)
-	VALUES ($1, $2)
-	ON CONFLICT (uid)
-	DO UPDATE SET created_at = $2
+func (s *SQLite) InsertUser(ctx context.Context, uid string) error {
+
+	if _, err := s.db.ExecContext(ctx, `
+	INSERT INTO linebot_users (uid, created_at)
+	VALUES (?, ?)
+	ON CONFLICT (uid) DO UPDATE SET
+	  created_at = ?
 	`,
 		uid,
 		time.Now(),
-	)
-	if err != nil {
+		time.Now(),
+	); err != nil {
 		return err
 	}
 

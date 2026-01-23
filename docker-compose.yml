@@ -5,8 +5,5 @@ services:
     volumes:
       - .:/app
     command: go run /app/cmd/api/main.go
-    environment:
-      - LINEBOT_SECRET=${LINEBOT_SECRET}
-      - LINEBOT_TOKEN=${LINEBOT_TOKEN}
     ports:
       - "8080:8080"

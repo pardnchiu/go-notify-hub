@@ -5,14 +5,14 @@ import (
 	"log/slog"
 )
 
-func SelectUserLinebot(ctx context.Context) ([]string, error) {
+func (s *SQLite) SelectUserLinebot(ctx context.Context) ([]string, error) {
 	const fn = "SelectUserLinebot"
 	var results = []string{}
 
-	rows, err := PG.QueryContext(ctx, `
+	rows, err := s.db.QueryContext(ctx, `
 	SELECT uid
-	FROM user_linebot
-	WHERE dismiss = FALSE
+	FROM linebot_users
+	WHERE dismiss = 0
 	`)
 	if err != nil {
 		// # SelectUserLinebot[0]

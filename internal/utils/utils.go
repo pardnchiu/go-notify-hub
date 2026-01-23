@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"time"
 )
 
 func GetPath(arg ...string) (string, error) {
@@ -60,19 +59,4 @@ func WriteJSON(path string, data map[string]string) error {
 		return err
 	}
 	return nil
-}
-
-func GetWorkDate(int int) string {
-	today := time.Now()
-	targetDate := today.AddDate(0, 0, int)
-
-	weekday := targetDate.Weekday()
-
-	if weekday == time.Sunday {
-		targetDate = targetDate.AddDate(0, 0, -2) // 日 -> 五
-	} else if weekday == time.Saturday {
-		targetDate = targetDate.AddDate(0, 0, -1) // 六 -> 五
-	}
-
-	return targetDate.Format("2006-01-02")
 }

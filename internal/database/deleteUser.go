@@ -4,15 +4,14 @@ import (
 	"context"
 )
 
-func DeleteUser(ctx context.Context, uid string) error {
-	_, err := PG.ExecContext(ctx, `
-	UDPATE user_linebot
-	SET dismiss = false
-	WHERE uid = $1
+func (s *SQLite) DeleteUser(ctx context.Context, uid string) error {
+	if _, err := s.db.ExecContext(ctx, `
+	UDPATE linebot_users
+	SET dismiss = 1
+	WHERE uid = ?
 	`,
 		uid,
-	)
-	if err != nil {
+	); err != nil {
 		return err
 	}
 
