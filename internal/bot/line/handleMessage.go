@@ -9,6 +9,13 @@ import (
 	"github.com/line/line-bot-sdk-go/v8/linebot"
 )
 
+type Message struct {
+	UserID  string
+	Cmd     string
+	Params  []string
+	Message string
+}
+
 func (h *LinebotHandler) handleMessage(ctx context.Context, event *linebot.Event, bot *linebot.Client) {
 	if event.Message == nil {
 		return
@@ -24,28 +31,23 @@ func (h *LinebotHandler) handleMessage(ctx context.Context, event *linebot.Event
 		return
 	}
 
-	parseMsg, err := parseMessage(userID, msg.Text)
+	parse, err := parseMessage(userID, msg.Text)
 	if err != nil {
 		return
 	}
 
-	if err := verifyMessage(*parseMsg); err != nil {
+	if err := verifyMessage(*parse); err != nil {
 		_, err := bot.ReplyMessage(
 			event.ReplyToken,
 			linebot.NewTextMessage(err.Error()),
 		).WithContext(ctx).Do()
 		if err != nil {
-			slog.Error("LinebotHandler/handleMessage: failed to reply message", "error", err)
+			slog.Error("LinebotHandler/handleMessage: failed to reply message",
+				slog.Any("error", err),
+			)
 		}
 		return
 	}
-}
-
-type Message struct {
-	UserID  string
-	Cmd     string
-	Params  []string
-	Message string
 }
 
 func parseMessage(userID, msg string) (*Message, error) {
@@ -65,6 +67,7 @@ func parseMessage(userID, msg string) (*Message, error) {
 }
 
 func verifyMessage(msg Message) error {
+	// * only support /{command} usage
 	if msg.Cmd == "/gex" && len(msg.Params) < 1 {
 		return fmt.Errorf("Usage: /gex $<ticker>")
 	}

@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+
+	"github.com/gin-gonic/gin"
 )
 
 func GetPath(arg ...string) (string, error) {
@@ -59,4 +61,11 @@ func WriteJSON(path string, data map[string]string) error {
 		return err
 	}
 	return nil
+}
+
+func ResponseError(c *gin.Context, status int, err error, fn, message string) {
+	slog.Error(fn+": "+message,
+		slog.Any("error", err),
+	)
+	c.String(status, message)
 }

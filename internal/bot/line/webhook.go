@@ -49,7 +49,9 @@ func New() (*LinebotHandler, error) {
 func (h *LinebotHandler) Webhook(c *gin.Context) {
 	events, err := Linebot.ParseRequest(c.Request)
 	if err != nil {
-		slog.Error("LinebotHandler/Webhook: failed to parse request", "error", err)
+		slog.Error("LinebotHandler/Webhook: failed to parse request",
+			slog.Any("error", err),
+		)
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -72,6 +74,7 @@ func (h *LinebotHandler) Webhook(c *gin.Context) {
 
 func (h *LinebotHandler) handleFollow(ctx context.Context, event *linebot.Event) {
 	const fn = "LinebotHandler/handleFollow"
+
 	userID := event.Source.UserID
 	if userID == "" {
 		slog.Error(fn + ": userID is required")
@@ -80,15 +83,19 @@ func (h *LinebotHandler) handleFollow(ctx context.Context, event *linebot.Event)
 
 	err := database.DB.InsertUser(ctx, userID)
 	if err != nil {
-		slog.Error(fn+": failed to insert user", "userID", userID, "error", err)
+		slog.Error(fn+": failed to insert user",
+			slog.String("userID", userID),
+			slog.Any("error", err))
 		return
 	}
 
-	slog.Info("new user added", "userID", userID)
+	slog.Info("new user added",
+		slog.String("userID", userID))
 }
 
 func (h *LinebotHandler) handleUnfollow(ctx context.Context, event *linebot.Event) {
 	const fn = "LinebotHandler/handleUnfollow"
+
 	userID := event.Source.UserID
 	if userID == "" {
 		slog.Error(fn + ": userID is required")
@@ -97,9 +104,12 @@ func (h *LinebotHandler) handleUnfollow(ctx context.Context, event *linebot.Even
 
 	err := database.DB.DeleteUser(ctx, userID)
 	if err != nil {
-		slog.Error(fn+": failed to delete user", "userID", userID, "error", err)
+		slog.Error(fn+": failed to delete user",
+			slog.String("userID", userID),
+			slog.Any("error", err))
 		return
 	}
 
-	slog.Info("user deleted", "userID", userID)
+	slog.Info("user deleted",
+		slog.String("userID", userID))
 }

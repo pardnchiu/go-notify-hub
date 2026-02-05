@@ -3,7 +3,7 @@ package Linebot
 import (
 	"context"
 	"go-notify-hub/internal/database"
-	"log/slog"
+	"go-notify-hub/internal/utils"
 	"net/http"
 	"time"
 
@@ -19,13 +19,11 @@ type LinebotMessage struct {
 
 // * POST: /linebot/send/all
 func (h *LinebotHandler) Send(c *gin.Context) {
-	const fn = "LinebotHandler/LinebotSend"
-	var (
-		req LinebotMessage
-	)
+	fn := "LinebotHandler/Send"
+
+	var req LinebotMessage
 	if err := c.ShouldBindJSON(&req); err != nil {
-		slog.Error(fn+"[0]", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse request payload"})
+		utils.ResponseError(c, http.StatusBadRequest, err, fn, "failed to parse request payload")
 		return
 	}
 
@@ -34,8 +32,7 @@ func (h *LinebotHandler) Send(c *gin.Context) {
 
 	userIDs, err := database.DB.SelectUserLinebot(ctx)
 	if err != nil {
-		slog.Error(fn+"[1]", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user IDs"})
+		utils.ResponseError(c, http.StatusInternalServerError, err, fn, "failed to get user IDs")
 		return
 	}
 
@@ -43,8 +40,7 @@ func (h *LinebotHandler) Send(c *gin.Context) {
 	if len(userIDs) <= 500 {
 		err := send(ctx, userIDs, req.Text, req.Image, req.ImagePreview)
 		if err != nil {
-			slog.Error(fn+"[2]", "error", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to send message"})
+			utils.ResponseError(c, http.StatusInternalServerError, err, fn, "failed to send message")
 		}
 		return
 	}
@@ -53,8 +49,7 @@ func (h *LinebotHandler) Send(c *gin.Context) {
 		end := min(i+500, len(userIDs))
 		err := send(ctx, userIDs[i:end], req.Text, req.Image, req.ImagePreview)
 		if err != nil {
-			slog.Error(fn+"[3]", "error", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to send message"})
+			utils.ResponseError(c, http.StatusInternalServerError, err, fn, "failed to send message")
 			break
 		}
 	}
