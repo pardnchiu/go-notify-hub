@@ -57,7 +57,7 @@ func (h *LinebotHandler) Send(c *gin.Context) {
 
 func send(ctx context.Context, userIDs []string, text, image, imagePreview string) error {
 	if image == "" {
-		_, err := Linebot.Multicast(userIDs,
+		_, err := Bot.Multicast(userIDs,
 			linebot.NewTextMessage(text),
 		).WithContext(ctx).Do()
 		return err
@@ -66,7 +66,7 @@ func send(ctx context.Context, userIDs []string, text, image, imagePreview strin
 	if imagePreview == "" {
 		imagePreview = image
 	}
-	_, err := Linebot.Multicast(userIDs,
+	_, err := Bot.Multicast(userIDs,
 		linebot.NewImageMessage(
 			image,
 			imagePreview,

@@ -38,12 +38,13 @@ func (h *LinebotHandler) handleMessage(ctx context.Context, event *linebot.Event
 }
 
 func parseMessage(userID, msg string) (*handler.Message, error) {
-	var regex = regexp.MustCompile(`^/\w+(\s+\S+)*$`)
-	if !regex.MatchString(msg) {
+	content := strings.TrimSpace(msg)
+	regex := regexp.MustCompile(`^/\w+(\s+\S+)*$`)
+	if !regex.MatchString(content) {
 		return nil, fmt.Errorf("invalid command format")
 	}
 
-	fields := strings.Fields(msg)
+	fields := strings.Fields(content)
 	newMsg := &handler.Message{
 		UserID:  userID,
 		Cmd:     fields[0],

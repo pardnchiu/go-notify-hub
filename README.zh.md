@@ -1,11 +1,16 @@
 ![cover](./cover.png)
 
 > [!NOTE]
-> 此 README 由 [Claude Code](https://github.com/pardnchiu/skill-readme-generate) 生成，英文版請參閱 [這裡](./README.md)。
+> 此 README 由 [SKILL](https://github.com/pardnchiu/skill-readme-generate) 生成，英文版請參閱 [這裡](./README.md)。
 
 # go-notify-hub
 
-> 多平台通知 API 服務，整合 Discord Webhook、Slack Webhook、LINE Bot 與 Email 發送功能，透過統一的 RESTful API 管理所有通知頻道。
+[![pkg](https://pkg.go.dev/badge/github.com/pardnchiu/go-notify-hub.svg)](https://pkg.go.dev/github.com/pardnchiu/go-notify-hub)
+[![card](https://goreportcard.com/badge/github.com/pardnchiu/go-notify-hub)](https://goreportcard.com/report/github.com/pardnchiu/go-notify-hub)
+[![license](https://img.shields.io/github/license/pardnchiu/go-notify-hub)](LICENSE)
+[![version](https://img.shields.io/github/v/tag/pardnchiu/go-notify-hub?label=release)](https://github.com/pardnchiu/go-notify-hub/releases)
+
+> 多平台通知 API 服務，整合 Discord Webhook、Slack Webhook、LINE Bot 和 Email，透過統一的 RESTful API 管理所有通知管道。
 
 ## 目錄
 
@@ -17,320 +22,422 @@
 - [API 參考](#api-參考)
 - [授權](#授權)
 - [Author](#author)
+- [Stars](#stars)
 
 ## 功能特點
 
-- **多平台整合**：支援 Discord Webhook、Slack Webhook、LINE Bot 與 Email
-- **統一 API**：透過 RESTful API 管理所有通知頻道
-- **頻道管理**：動態新增、刪除與列出已註冊頻道
-- **LINE Bot 互動**：自動處理追蹤/取消追蹤事件與批次推播
-- **Email 發送**：支援單封與批量郵件發送，含 TLS/STARTTLS
-- **豐富訊息格式**：支援 Embeds、附件、欄位、圖片等進階格式
-- **併發安全**：使用 RWMutex 保護共享資料結構
+- **多平台整合**：支援 Discord Webhook、Slack Webhook、LINE Bot 和 Email
+- **統一 API**：透過 RESTful API 管理所有通知管道
+- **管道管理**：動態新增、移除和列出已註冊的管道
+- **LINE Bot 互動**：自動處理關注／取消關注事件和批次廣播
+- **Email 傳送**：支援單一和批次 Email 傳送，具備 TLS/STARTTLS 支援
+- **豐富訊息格式**：支援嵌入內容、附件、欄位、圖片等
+- **並發安全**：使用 RWMutex 保護共享資料結構
 
 ## 架構
 
 ```
 cmd/
 └── api/
-    └── main.go              # 程式進入點
+    └── main.go              # 應用程式進入點
 internal/
+├── bot/
+│   ├── dicord/              # Discord Bot 處理邏輯
+│   ├── line/                # LINE Bot 處理邏輯
+│   └── handler/             # Bot 請求路由
 ├── channel/
-│   ├── discord.go           # Discord Webhook 發送邏輯
-│   └── slack.go             # Slack Webhook 發送邏輯
+│   ├── discord/             # Discord Webhook 管理
+│   └── slack/               # Slack Webhook 管理
 ├── database/
 │   ├── sqlite.go            # SQLite 連線管理
 │   ├── insertUser.go        # 新增使用者
 │   ├── deleteUser.go        # 刪除使用者
 │   └── selectUserLinebot.go # 查詢 LINE Bot 使用者
-├── discord/
-│   ├── discord.go           # Discord Handler 初始化
-│   ├── send.go              # 發送訊息
-│   ├── add.go               # 新增頻道
-│   └── delete.go            # 刪除頻道
 ├── email/
-│   ├── email.go             # Email 客戶端與 SMTP 發送
-│   ├── send.go              # 單封郵件發送
-│   └── bulk.go              # 批量郵件發送
-├── linebot/
-│   ├── webhook.go           # LINE Bot Webhook 處理
-│   ├── send.go              # 批次推播
-│   └── handleMessage.go     # 訊息處理
-├── slack/
-│   ├── slack.go             # Slack Handler 初始化
-│   ├── send.go              # 發送訊息
-│   ├── add.go               # 新增頻道
-│   └── delete.go            # 刪除頻道
+│   ├── email.go             # Email 客戶端初始化
+│   ├── send.go              # 傳送單一 Email
+│   └── bulk.go              # 批次傳送 Email
 └── utils/
-    └── utils.go             # 通用工具函式
+    └── utils.go             # 共用工具函式
 ```
 
 ## 安裝
 
-### 前置需求
-
-- Go 1.20 或更高版本
-
-### 下載與編譯
+### 從原始碼建置
 
 ```bash
+# Clone 儲存庫
 git clone https://github.com/pardnchiu/go-notify-hub.git
 cd go-notify-hub
+
+# 安裝相依套件
 go mod download
-go build -o go-notify-hub ./cmd/api
+
+# 建置應用程式
+go build -o go-notify-hub cmd/api/main.go
+```
+
+### 使用 Docker
+
+```bash
+# 使用 Docker Compose
+docker-compose up -d
+
+# 或手動建置 Docker 映像檔
+docker build -t go-notify-hub .
+docker run -p 8080:8080 \
+  -v $(pwd)/data:/data \
+  --env-file .env \
+  go-notify-hub
 ```
 
 ## 設定
 
-建立 `.env` 檔案並填入以下環境變數：
+建立 `.env` 檔案於專案根目錄：
 
-```env
-# 資料庫路徑（選填，預設為 ~/.go-notify-hub/database.db）
+```bash
+# 資料庫路徑（選填，預設：~/.go-notify-hub/database.db）
 DB_PATH=/path/to/database.db
 
-# LINE Bot（選填）
-LINEBOT_SECRET=your_line_channel_secret
-LINEBOT_TOKEN=your_line_channel_access_token
+# Discord Bot（選填）
+DISCORD_BOT_TOKEN=your_discord_bot_token
 
-# Email SMTP（必填，若使用 Email 功能）
-MAIL_SERVICE=smtp.example.com
-MAIL_SERVICE_PORT=587
-MAIL_SERVICE_USER=user@example.com
-MAIL_SERVICE_PASSWORD=your_password
+# LINE Bot（選填）
+LINEBOT_SECRET=your_linebot_channel_secret
+LINEBOT_TOKEN=your_linebot_channel_access_token
+
+# Email SMTP（選填）
+EMAIL_SMTP_HOST=smtp.gmail.com
+EMAIL_SMTP_PORT=587
+EMAIL_FROM=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
 ```
+
+### 環境變數說明
+
+| 變數 | 說明 | 必要 | 預設值 |
+|------|------|------|--------|
+| `DB_PATH` | SQLite 資料庫檔案路徑 | 否 | `~/.go-notify-hub/database.db` |
+| `DISCORD_BOT_TOKEN` | Discord Bot Token | 否 | - |
+| `LINEBOT_SECRET` | LINE Bot Channel Secret | 否 | - |
+| `LINEBOT_TOKEN` | LINE Bot Channel Access Token | 否 | - |
+| `EMAIL_SMTP_HOST` | SMTP 伺服器主機 | 否 | - |
+| `EMAIL_SMTP_PORT` | SMTP 伺服器埠號 | 否 | `587` |
+| `EMAIL_FROM` | 寄件者 Email 地址 | 否 | - |
+| `EMAIL_PASSWORD` | Email 密碼或應用程式密碼 | 否 | - |
 
 ## 使用方法
 
-### 啟動伺服器
+### 啟動服務
 
 ```bash
+# 直接執行
+./go-notify-hub
+
+# 或使用 go run
 go run cmd/api/main.go
 ```
 
-伺服器將於 `:8080` 啟動。
+服務預設在 `:8080` 啟動。
 
-### Docker
-
-```bash
-docker-compose up -d
-```
-
-### Discord Webhook
+### Discord Webhook 範例
 
 ```bash
-# 新增頻道
+# 新增 Discord 管道
 curl -X POST http://localhost:8080/discord/add \
   -H "Content-Type: application/json" \
   -d '{
-    "datas": [
-      {"name": "alerts", "webhook": "https://discord.com/api/webhooks/..."}
-    ]
+    "name": "alerts",
+    "webhook": "https://discord.com/api/webhooks/..."
   }'
 
-# 發送訊息
+# 傳送訊息到 Discord
 curl -X POST http://localhost:8080/discord/alerts \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "系統通知",
-    "description": "伺服器已啟動",
-    "color": "#00FF00"
+    "content": "Hello from go-notify-hub!",
+    "embeds": [{
+      "title": "系統通知",
+      "description": "服務已成功啟動",
+      "color": 3447003
+    }]
   }'
 
-# 列出頻道
+# 列出所有 Discord 管道
 curl http://localhost:8080/discord/list
 
-# 刪除頻道
+# 刪除 Discord 管道
 curl -X DELETE http://localhost:8080/discord/alerts
 ```
 
-### Slack Webhook
+### Slack Webhook 範例
 
 ```bash
-# 新增頻道
+# 新增 Slack 管道
 curl -X POST http://localhost:8080/slack/add \
   -H "Content-Type: application/json" \
   -d '{
-    "datas": [
-      {"name": "general", "webhook": "https://hooks.slack.com/services/..."}
-    ]
+    "name": "monitoring",
+    "webhook": "https://hooks.slack.com/services/..."
   }'
 
-# 發送訊息
-curl -X POST http://localhost:8080/slack/general \
+# 傳送訊息到 Slack
+curl -X POST http://localhost:8080/slack/monitoring \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "系統通知",
-    "title": "伺服器狀態",
-    "description": "所有服務運作正常",
-    "color": "good"
+    "text": "伺服器 CPU 使用率過高",
+    "attachments": [{
+      "color": "danger",
+      "fields": [{
+        "title": "CPU 使用率",
+        "value": "95%",
+        "short": true
+      }]
+    }]
   }'
 ```
 
-### LINE Bot 推播
+### LINE Bot 範例
 
 ```bash
-# 推播給所有追蹤者
+# Webhook 端點（由 LINE Platform 呼叫）
+# POST http://localhost:8080/linebot/webhook
+
+# 廣播訊息給所有關注者
 curl -X POST http://localhost:8080/linebot/send/all \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "系統公告",
-    "image": "https://example.com/image.png"
+    "messages": [{
+      "type": "text",
+      "text": "重要公告：系統將於今晚 22:00 進行維護"
+    }]
   }'
 ```
 
-### Email 發送
+### Email 範例
 
 ```bash
-# 單封郵件
+# 傳送單一 Email
 curl -X POST http://localhost:8080/email/send \
   -H "Content-Type: application/json" \
   -d '{
-    "to": "recipient@example.com",
-    "subject": "測試郵件",
-    "body": "這是一封測試郵件",
-    "is_html": false
+    "to": ["user@example.com"],
+    "subject": "測試信件",
+    "body": "這是一封測試信件。",
+    "html": true
   }'
 
-# 批量郵件
+# 批次傳送 Email
 curl -X POST http://localhost:8080/email/send/bulk \
   -H "Content-Type: application/json" \
   -d '{
-    "to": ["user1@example.com", "user2@example.com"],
-    "subject": "系統公告",
-    "body": "<h1>公告內容</h1>",
-    "is_html": true,
-    "min_delay": 1
+    "recipients": [
+      {"email": "user1@example.com", "name": "User 1"},
+      {"email": "user2@example.com", "name": "User 2"}
+    ],
+    "subject": "批次通知",
+    "body": "親愛的 {{.Name}}，這是您的個人化訊息。",
+    "html": true
   }'
 ```
 
 ## API 參考
 
-### Discord
+### Discord API
 
-| 方法 | 路徑 | 說明 |
-|------|------|------|
-| GET | `/discord/list` | 列出所有已註冊頻道 |
-| POST | `/discord/add` | 新增頻道 |
-| POST | `/discord/:channelName` | 發送訊息至指定頻道 |
-| DELETE | `/discord/:channelName` | 刪除頻道 |
+| 方法 | 端點 | 說明 |
+|--------|----------|-------------|
+| `GET` | `/discord/list` | 列出所有已註冊的 Discord 管道 |
+| `POST` | `/discord/:channelName` | 傳送訊息到指定管道 |
+| `POST` | `/discord/add` | 新增 Discord 管道 |
+| `DELETE` | `/discord/:channelName` | 刪除 Discord 管道 |
 
-#### Discord 訊息格式
+#### POST /discord/add
 
+**請求 Body：**
 ```json
 {
-  "title": "標題（必填）",
-  "description": "內容（必填）",
-  "url": "https://example.com",
-  "color": "#FF5733",
-  "timestamp": "2025-01-01T00:00:00Z",
-  "image": "https://example.com/image.png",
-  "thumbnail": "https://example.com/thumb.png",
-  "fields": [
-    {"name": "欄位名稱", "value": "欄位值", "inline": true}
+  "name": "channel-name",
+  "webhook": "https://discord.com/api/webhooks/..."
+}
+```
+
+**回應：**
+```json
+{
+  "message": "Channel added successfully"
+}
+```
+
+#### POST /discord/:channelName
+
+**請求 Body：**
+```json
+{
+  "content": "Message content",
+  "username": "Custom Bot Name",
+  "avatar_url": "https://example.com/avatar.png",
+  "embeds": [{
+    "title": "Embed Title",
+    "description": "Embed Description",
+    "color": 3447003,
+    "fields": [{
+      "name": "Field Name",
+      "value": "Field Value",
+      "inline": true
+    }],
+    "image": {
+      "url": "https://example.com/image.png"
+    },
+    "timestamp": "2026-01-01T00:00:00Z"
+  }]
+}
+```
+
+### Slack API
+
+| 方法 | 端點 | 說明 |
+|--------|----------|-------------|
+| `GET` | `/slack/list` | 列出所有已註冊的 Slack 管道 |
+| `POST` | `/slack/:channelName` | 傳送訊息到指定管道 |
+| `POST` | `/slack/add` | 新增 Slack 管道 |
+| `DELETE` | `/slack/:channelName` | 刪除 Slack 管道 |
+
+#### POST /slack/add
+
+**請求 Body：**
+```json
+{
+  "name": "channel-name",
+  "webhook": "https://hooks.slack.com/services/..."
+}
+```
+
+#### POST /slack/:channelName
+
+**請求 Body：**
+```json
+{
+  "text": "Message text",
+  "attachments": [{
+    "color": "good",
+    "title": "Attachment Title",
+    "text": "Attachment Text",
+    "fields": [{
+      "title": "Field Title",
+      "value": "Field Value",
+      "short": true
+    }]
+  }]
+}
+```
+
+### LINE Bot API
+
+| 方法 | 端點 | 說明 |
+|--------|----------|-------------|
+| `POST` | `/linebot/webhook` | LINE Platform Webhook 端點 |
+| `POST` | `/linebot/send/all` | 廣播訊息給所有關注者 |
+
+#### POST /linebot/send/all
+
+**請求 Body：**
+```json
+{
+  "messages": [{
+    "type": "text",
+    "text": "廣播訊息內容"
+  }]
+}
+```
+
+**支援的訊息類型：**
+- `text`：文字訊息
+- `image`：圖片訊息
+- `video`：影片訊息
+- `audio`：音訊訊息
+- `location`：位置訊息
+- `sticker`：貼圖訊息
+- `template`：範本訊息
+- `flex`：Flex 訊息
+
+### Email API
+
+| 方法 | 端點 | 說明 |
+|--------|----------|-------------|
+| `POST` | `/email/send` | 傳送單一 Email |
+| `POST` | `/email/send/bulk` | 批次傳送 Email |
+
+#### POST /email/send
+
+**請求 Body：**
+```json
+{
+  "to": ["recipient@example.com"],
+  "cc": ["cc@example.com"],
+  "bcc": ["bcc@example.com"],
+  "subject": "Email Subject",
+  "body": "Email body content",
+  "html": true
+}
+```
+
+#### POST /email/send/bulk
+
+**請求 Body：**
+```json
+{
+  "recipients": [
+    {"email": "user1@example.com", "name": "User 1"},
+    {"email": "user2@example.com", "name": "User 2"}
   ],
-  "footer": {"text": "頁尾文字", "icon_url": "https://example.com/icon.png"},
-  "author": {"name": "作者名稱", "url": "https://example.com", "icon_url": "https://example.com/author.png"},
-  "username": "自訂 Bot 名稱",
-  "avatar_url": "https://example.com/avatar.png"
+  "subject": "Email Subject",
+  "body": "Hello {{.Name}}, this is your personalized message.",
+  "html": true
 }
 ```
 
-### Slack
+**範本變數：**
+- `{{.Name}}`：收件者姓名
+- `{{.Email}}`：收件者 Email
 
-| 方法 | 路徑 | 說明 |
-|------|------|------|
-| GET | `/slack/list` | 列出所有已註冊頻道 |
-| POST | `/slack/add` | 新增頻道 |
-| POST | `/slack/:channelName` | 發送訊息至指定頻道 |
-| DELETE | `/slack/:channelName` | 刪除頻道 |
+### 資料庫 API
 
-#### Slack 訊息格式
+#### SQLite
 
-```json
-{
-  "text": "訊息文字（必填）",
-  "title": "Attachment 標題",
-  "title_link": "https://example.com",
-  "description": "Attachment 內容",
-  "pretext": "Attachment 上方文字",
-  "color": "#FF5733",
-  "timestamp": 1704067200,
-  "image": "https://example.com/image.png",
-  "thumbnail": "https://example.com/thumb.png",
-  "fields": [
-    {"title": "欄位名稱", "value": "欄位值", "short": true}
-  ],
-  "footer": {"text": "頁尾文字", "icon_url": "https://example.com/icon.png"},
-  "username": "自訂 Bot 名稱",
-  "icon_emoji": ":rocket:",
-  "channel": "#channel",
-  "thread_ts": "1234567890.123456"
+**匯出的類型：**
+
+```go
+type SQLite struct {
+    // 內部欄位
 }
 ```
 
-### LINE Bot
+**方法：**
 
-| 方法 | 路徑 | 說明 |
-|------|------|------|
-| POST | `/linebot/webhook` | LINE Webhook 端點 |
-| POST | `/linebot/send/all` | 推播給所有追蹤者 |
+| 方法 | 簽章 | 說明 |
+|--------|-----------|-------------|
+| `NewSQLite` | `func NewSQLite(dbPath string) (*SQLite, error)` | 建立新的 SQLite 連線 |
+| `Close` | `func (s *SQLite) Close() error` | 關閉資料庫連線 |
+| `InsertUser` | `func (s *SQLite) InsertUser(ctx context.Context, uid string) error` | 新增使用者（LINE Bot 關注者） |
+| `DeleteUser` | `func (s *SQLite) DeleteUser(ctx context.Context, uid string) error` | 刪除使用者（LINE Bot 取消關注） |
+| `SelectUserLinebot` | `func (s *SQLite) SelectUserLinebot(ctx context.Context) ([]string, error)` | 查詢所有 LINE Bot 使用者 ID |
 
-#### LINE Bot 訊息格式
+### 工具函式
 
-```json
-{
-  "text": "訊息內容",
-  "image": "https://example.com/image.png",
-  "image_preview": "https://example.com/preview.png"
-}
-```
+**匯出的函式：**
 
-### Email
-
-| 方法 | 路徑 | 說明 |
-|------|------|------|
-| POST | `/email/send` | 發送單封郵件 |
-| POST | `/email/send/bulk` | 批量發送郵件 |
-
-#### Email 發送格式
-
-```json
-{
-  "to": "recipient@example.com",
-  "subject": "郵件主旨（必填）",
-  "body": "郵件內容（必填）",
-  "alt_body": "純文字替代內容",
-  "from": "sender@example.com",
-  "cc": "cc@example.com",
-  "bcc": "bcc@example.com",
-  "priority": "high",
-  "is_html": true
-}
-```
-
-#### Email 批量發送格式
-
-```json
-{
-  "to": ["user1@example.com", "user2@example.com"],
-  "subject": "郵件主旨（必填）",
-  "body": "郵件內容（必填）",
-  "from": "sender@example.com",
-  "is_html": false,
-  "min_delay": 1,
-  "stop_on_error": false
-}
-```
-
-**收件人格式支援**：
-
-- 單一地址：`"user@example.com"`
-- 多個地址：`["user1@example.com", "user2@example.com"]`
-- 帶名稱：`"Name:user@example.com"` 或 `{"user@example.com": "Name"}`
+| 函式 | 簽章 | 說明 |
+|----------|-----------|-------------|
+| `GetPath` | `func GetPath(arg ...string) (string, error)` | 取得設定檔路徑 |
+| `GetFile` | `func GetFile(arg ...string) (map[string]string, error)` | 讀取 JSON 設定檔 |
+| `WriteJSON` | `func WriteJSON(path string, data map[string]string) error` | 寫入 JSON 設定檔 |
+| `ResponseError` | `func ResponseError(c *gin.Context, status int, err error, fn, message string)` | 標準化錯誤回應 |
+| `CheckChannelPayload` | `func CheckChannelPayload(req ChannelPayload, regexName, regexWebhook *regexp.Regexp) error` | 驗證管道請求資料 |
 
 ## 授權
 
-MIT License
+本專案採用 [MIT LICENSE](LICENSE)。
 
 ## Author
 
@@ -343,6 +450,10 @@ MIT License
 </a> <a href="https://linkedin.com/in/pardnchiu" target="_blank">
 <img src="https://pardn.io/image/linkedin.svg" width="48" height="48">
 </a>
+
+## Stars
+
+[![Star](https://api.star-history.com/svg?repos=pardnchiu/go-notify-hub&type=Date)](https://www.star-history.com/#pardnchiu/go-notify-hub&Date)
 
 ***
 

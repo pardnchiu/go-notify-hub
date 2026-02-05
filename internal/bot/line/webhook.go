@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"regexp"
 	"sync"
 	"time"
 
@@ -16,9 +15,8 @@ import (
 )
 
 var (
-	Linebot      *linebot.Client
-	linebotMu    sync.Mutex
-	vaildCommand = regexp.MustCompile(`^/([A-Za-z0-9]+)`) // detect command syntax
+	Bot       *linebot.Client
+	linebotMu sync.Mutex
 )
 
 type LinebotHandler struct{}
@@ -27,7 +25,7 @@ func New() (*LinebotHandler, error) {
 	linebotMu.Lock()
 	defer linebotMu.Unlock()
 
-	if Linebot == nil {
+	if Bot == nil {
 		secret := os.Getenv("LINEBOT_SECRET")
 		token := os.Getenv("LINEBOT_TOKEN")
 
@@ -39,7 +37,7 @@ func New() (*LinebotHandler, error) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		Linebot = bot
+		Bot = bot
 	}
 
 	return &LinebotHandler{}, nil
@@ -47,7 +45,7 @@ func New() (*LinebotHandler, error) {
 
 // * POST: /linebot/webhook
 func (h *LinebotHandler) Webhook(c *gin.Context) {
-	events, err := Linebot.ParseRequest(c.Request)
+	events, err := Bot.ParseRequest(c.Request)
 	if err != nil {
 		slog.Error("LinebotHandler/Webhook: failed to parse request",
 			slog.Any("error", err),
@@ -62,7 +60,7 @@ func (h *LinebotHandler) Webhook(c *gin.Context) {
 	for _, event := range events {
 		switch event.Type {
 		case linebot.EventTypeMessage:
-			h.handleMessage(ctx, event, Linebot)
+			h.handleMessage(ctx, event, Bot)
 		case linebot.EventTypeFollow:
 			h.handleFollow(ctx, event)
 		case linebot.EventTypeUnfollow:

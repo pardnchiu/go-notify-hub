@@ -1,6 +1,7 @@
 package main
 
 import (
+	discordbot "go-notify-hub/internal/bot/dicord"
 	Linebot "go-notify-hub/internal/bot/line"
 	"go-notify-hub/internal/channel/discord"
 	"go-notify-hub/internal/channel/slack"
@@ -42,6 +43,11 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
+	bot, err := discordbot.New()
+	if bot != nil {
+		defer bot.Close()
+	}
 
 	r := gin.Default()
 
