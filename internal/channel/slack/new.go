@@ -1,4 +1,4 @@
-package discord
+package slack
 
 import (
 	"go-notify-hub/internal/utils"
@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	configFile   = "discord_channel.json"
+	configFile   = "slack_channel.json"
 	channels     map[string]string
 	channelsMu   sync.RWMutex
 	regexName    = regexp.MustCompile(`^[0-9A-Za-z@_-]+$`)
-	regexWebhook = regexp.MustCompile(`^https://discord\.com/api/webhooks/\d{17,20}/[A-Za-z0-9_\-]{68}$`)
+	regexWebhook = regexp.MustCompile(`^https://hooks\.slack\.com/services/[A-Z0-9]{8,}/[A-Z0-9]{8,}/[a-zA-Z0-9]{24,}$`)
 )
 
 type Handler struct{}
@@ -42,7 +42,7 @@ func New() (*Handler, error) {
 	return &Handler{}, nil
 }
 
-// * GET: /discord/list
+// * GET: /slack/list
 func (h *Handler) List(c *gin.Context) {
 	channelsMu.RLock()
 	defer channelsMu.RUnlock()

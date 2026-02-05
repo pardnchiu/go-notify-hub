@@ -1,15 +1,66 @@
-package channel
+package slack
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"go-notify-hub/internal/utils"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
-type SlackRequest struct {
+// * POST: /slack/send/:channelName
+func (h *Handler) Send(c *gin.Context) {
+	fn := "SlackHandler/Send"
+	channelName := c.Param("channelName")
+	if channelName == "" {
+		utils.ResponseError(c, http.StatusBadRequest, nil, fn, "channel name is required")
+		return
+	}
+
+	if !regexName.MatchString(channelName) {
+		utils.ResponseError(c, http.StatusBadRequest, nil, fn, "invalid channel name format")
+		return
+	}
+
+	channelsMu.RLock()
+	cacheChannels := channels
+	channelsMu.RUnlock()
+
+	if cacheChannels == nil {
+		c.String(http.StatusOK, fn+": need to add channels first")
+		return
+	}
+
+	webhook, ok := cacheChannels[channelName]
+	if !ok || webhook == "" {
+		utils.ResponseError(c, http.StatusBadRequest, nil, fn, "this channel does not exist")
+		return
+	}
+	var req Request
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ResponseError(c, http.StatusBadRequest, err, fn, "failed to parse request payload")
+		return
+	}
+	req.WebhookURL = webhook
+
+	if req.Text == "" {
+		utils.ResponseError(c, http.StatusBadRequest, nil, fn, "text is required")
+		return
+	}
+
+	if err := send(req); err != nil {
+		utils.ResponseError(c, http.StatusInternalServerError, err, fn, "failed to send notification")
+		return
+	}
+
+	c.String(http.StatusOK, fn+": ok")
+}
+
+type Request struct {
 	WebhookURL string `json:"webhook_url"`
 	Text       string `json:"text"` // Required: fallback & notification text
 
@@ -26,8 +77,8 @@ type SlackRequest struct {
 	Thumbnail string `json:"thumbnail,omitempty"` // Thumb image (右側)
 
 	// Optional extras
-	Fields []SlackField `json:"fields,omitempty"`
-	Footer *SlackFooter `json:"footer,omitempty"`
+	Fields []Field `json:"fields,omitempty"`
+	Footer *Footer `json:"footer,omitempty"`
 
 	// Bot identity (legacy webhook only)
 	Channel   string `json:"channel,omitempty"` // "#channel" or "@user"
@@ -39,50 +90,44 @@ type SlackRequest struct {
 	ThreadTS string `json:"thread_ts,omitempty"`
 }
 
-type SlackField struct {
+type Field struct {
 	Title string `json:"title"`
 	Value string `json:"value"`
 	Short bool   `json:"short,omitempty"`
 }
 
-type SlackFooter struct {
+type Footer struct {
 	Text    string `json:"text"`
 	IconURL string `json:"icon_url,omitempty"`
 }
 
-type SlackPayload struct {
-	Text        string            `json:"text"`
-	Channel     string            `json:"channel,omitempty"`
-	Username    string            `json:"username,omitempty"`
-	IconEmoji   string            `json:"icon_emoji,omitempty"`
-	IconURL     string            `json:"icon_url,omitempty"`
-	ThreadTS    string            `json:"thread_ts,omitempty"`
-	Attachments []SlackAttachment `json:"attachments,omitempty"`
+type Payload struct {
+	Text        string       `json:"text"`
+	Channel     string       `json:"channel,omitempty"`
+	Username    string       `json:"username,omitempty"`
+	IconEmoji   string       `json:"icon_emoji,omitempty"`
+	IconURL     string       `json:"icon_url,omitempty"`
+	ThreadTS    string       `json:"thread_ts,omitempty"`
+	Attachments []Attachment `json:"attachments,omitempty"`
 }
 
-type SlackAttachment struct {
-	Fallback   string              `json:"fallback,omitempty"`
-	Color      string              `json:"color,omitempty"`
-	Pretext    string              `json:"pretext,omitempty"`
-	Title      string              `json:"title,omitempty"`
-	TitleLink  string              `json:"title_link,omitempty"`
-	Text       string              `json:"text,omitempty"`
-	ImageURL   string              `json:"image_url,omitempty"`
-	ThumbURL   string              `json:"thumb_url,omitempty"`
-	Footer     string              `json:"footer,omitempty"`
-	FooterIcon string              `json:"footer_icon,omitempty"`
-	Timestamp  int64               `json:"ts,omitempty"`
-	Fields     []SlackPayloadField `json:"fields,omitempty"`
+type Attachment struct {
+	Fallback   string  `json:"fallback,omitempty"`
+	Color      string  `json:"color,omitempty"`
+	Pretext    string  `json:"pretext,omitempty"`
+	Title      string  `json:"title,omitempty"`
+	TitleLink  string  `json:"title_link,omitempty"`
+	Text       string  `json:"text,omitempty"`
+	ImageURL   string  `json:"image_url,omitempty"`
+	ThumbURL   string  `json:"thumb_url,omitempty"`
+	Footer     string  `json:"footer,omitempty"`
+	FooterIcon string  `json:"footer_icon,omitempty"`
+	Timestamp  int64   `json:"ts,omitempty"`
+	Fields     []Field `json:"fields,omitempty"`
 }
 
-type SlackPayloadField struct {
-	Title string `json:"title"`
-	Value string `json:"value"`
-	Short bool   `json:"short,omitempty"`
-}
-
-func SendToSlack(request SlackRequest) error {
-	payload := SlackPayload{
+func send(request Request) error {
+	payload := Payload{
 		Text: request.Text,
 	}
 
@@ -103,7 +148,7 @@ func SendToSlack(request SlackRequest) error {
 	}
 
 	if hasAttachment(request) {
-		attachment := SlackAttachment{
+		attachment := Attachment{
 			Fallback:  request.Text,
 			Color:     parseSlackColor(request.Color),
 			Pretext:   request.Pretext,
@@ -122,15 +167,7 @@ func SendToSlack(request SlackRequest) error {
 		}
 
 		if len(request.Fields) > 0 {
-			fields := make([]SlackPayloadField, 0, len(request.Fields))
-			for _, field := range request.Fields {
-				fields = append(fields, SlackPayloadField{
-					Title: field.Title,
-					Value: field.Value,
-					Short: field.Short,
-				})
-			}
-			attachment.Fields = fields
+			attachment.Fields = request.Fields
 		}
 
 		if request.Footer != nil {
@@ -138,7 +175,7 @@ func SendToSlack(request SlackRequest) error {
 			attachment.FooterIcon = request.Footer.IconURL
 		}
 
-		payload.Attachments = []SlackAttachment{attachment}
+		payload.Attachments = []Attachment{attachment}
 	}
 
 	jsonData, err := json.Marshal(payload)
@@ -169,7 +206,7 @@ func SendToSlack(request SlackRequest) error {
 	return nil
 }
 
-func hasAttachment(r SlackRequest) bool {
+func hasAttachment(r Request) bool {
 	return r.Title != "" ||
 		r.Description != "" ||
 		r.Pretext != "" ||

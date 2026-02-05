@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -68,4 +70,42 @@ func ResponseError(c *gin.Context, status int, err error, fn, message string) {
 		slog.Any("error", err),
 	)
 	c.String(status, message)
+}
+
+type ChannelPayload struct {
+	Datas []struct {
+		Name    string `json:"name"`
+		Webhook string `json:"webhook"`
+	} `json:"datas"`
+}
+
+func CheckChannelPayload(req ChannelPayload, regexName, regexWebhook *regexp.Regexp) error {
+	if len(req.Datas) == 0 {
+		return fmt.Errorf("need provide at least one channel data with name and webhook") 
+	}
+
+	var invalidNames []string
+	var invalidWebhooks []string
+	for _, data := range req.Datas {
+		name := strings.TrimSpace(data.Name)
+		webhook := strings.TrimSpace(data.Webhook)
+
+		if !regexName.MatchString(name) {
+			slog.Error("invalid channel name format",
+				slog.String("channelName", name),
+			)
+			invalidNames = append(invalidNames, name)
+		}
+		if !regexWebhook.MatchString(webhook) {
+			slog.Error("invalid webhook URL format",
+				slog.String("webhook", webhook),
+			)
+			invalidWebhooks = append(invalidWebhooks, webhook)
+		}
+	}
+
+	if len(invalidNames) > 0 || len(invalidWebhooks) > 0 {
+		return fmt.Errorf("invalid channel names or webhook URLs")
+	}
+	return nil
 }

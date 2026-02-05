@@ -1,4 +1,4 @@
-package discord
+package slack
 
 import (
 	"maps"
@@ -10,10 +10,10 @@ import (
 	"go-notify-hub/internal/utils"
 )
 
-// * POST: /discord/add
+// * POST: /slack/add
 // * BODY: { datas: [{ "name": "name", "webhook": "url"}] }
 func (h *Handler) Add(c *gin.Context) {
-	fn := "DiscordHandler/Add"
+	fn := "SlackHandler/Add"
 	var req utils.ChannelPayload
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ResponseError(c, http.StatusBadRequest, err, fn, "failed to parse request payload")
@@ -30,6 +30,7 @@ func (h *Handler) Add(c *gin.Context) {
 
 	if channels == nil {
 		channels = make(map[string]string)
+		return
 	}
 
 	for _, data := range req.Datas {
