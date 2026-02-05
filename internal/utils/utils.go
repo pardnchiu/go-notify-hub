@@ -81,7 +81,7 @@ type ChannelPayload struct {
 
 func CheckChannelPayload(req ChannelPayload, regexName, regexWebhook *regexp.Regexp) error {
 	if len(req.Datas) == 0 {
-		return fmt.Errorf("need provide at least one channel data with name and webhook") 
+		return fmt.Errorf("need provide at least one channel data with name and webhook")
 	}
 
 	var invalidNames []string

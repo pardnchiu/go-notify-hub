@@ -58,7 +58,7 @@ func (h *Handler) Send(c *gin.Context) {
 		return
 	}
 
-	if err := send(req); err != nil {
+	if err := SendMessage(req); err != nil {
 		utils.ResponseError(c, http.StatusInternalServerError, err, fn, "failed to send notification")
 		return
 	}
@@ -124,7 +124,7 @@ type EmbedAuthor struct {
 	IconURL string `json:"icon_url,omitempty"`
 }
 
-func send(request Request) error {
+func SendMessage(request Request) error {
 	payload := Payload{
 		Embeds: []Embed{
 			Embed{
