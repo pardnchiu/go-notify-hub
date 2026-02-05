@@ -110,6 +110,7 @@ func (h *LinebotHandler) handleUnfollow(ctx context.Context, event *linebot.Even
 		return
 	}
 
+	slog.Info("user deleted", "userID", userID)
 	slog.Info("user deleted",
 		slog.String("userID", userID))
 }

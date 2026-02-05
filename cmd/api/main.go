@@ -2,8 +2,8 @@ package main
 
 import (
 	Linebot "go-notify-hub/internal/bot/line"
+	"go-notify-hub/internal/channel/discord"
 	"go-notify-hub/internal/database"
-	"go-notify-hub/internal/discord"
 	"go-notify-hub/internal/email"
 	"go-notify-hub/internal/slack"
 	"log"
